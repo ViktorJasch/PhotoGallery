@@ -1,9 +1,5 @@
 package com.example.photogallery;
 
-/**
- * Created by Виктор on 07.12.2016.
- */
-
 public class GalleryItem {
     private String mCaption;
     private String mId;
