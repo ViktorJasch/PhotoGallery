@@ -15,9 +15,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Виктор on 07.12.2016.
- */
 
 public class FlickrFetch {
     private static final String TAG = "FlickrFetch";
