@@ -8,6 +8,11 @@ import android.content.Intent;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
+/**
+ * Автономный приемник. Фильтром является ACTION_SHOW_NOTIFICATION. Если приложение запущенно, то
+ * данный приемник получает Activity.RESULT_CANCEL и не срабатывает. Если приложение закрыто, то
+ * получает переданное в Intent'е уведомление и запускает его.
+ */
 public class NotificationReceiver extends BroadcastReceiver {
     private static final String TAG = "NotificationReceiver";
 

@@ -8,8 +8,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.app.Fragment;
 import android.util.Log;
-import android.widget.Toast;
 
+/**
+ * Класс необходим для регистрации динамического приемника широковещательных сообщений
+ * (mOnShowNotification) при запуске приложения
+ *
+ */
 public abstract class VisibleFragment extends Fragment {
     public static final String TAG = "VisibleFragment";
 
@@ -29,6 +33,10 @@ public abstract class VisibleFragment extends Fragment {
         getActivity().unregisterReceiver(mOnShowNotification);
     }
 
+    //Данный приемник срабатывает только когда приложение запущенно (так как он динамический).
+    //Фильтром является ACTION_SHOW_NOTIFICATION. Сообщения с таким тегом вызываются при появлении новых фото
+    //в классе PollService методом showBackgroundNotification.
+    //Если этот применик существует (т.е. приложение запущенно), уведомление отменяется (что б не бесило),
     private BroadcastReceiver mOnShowNotification = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {

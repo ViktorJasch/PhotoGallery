@@ -7,8 +7,9 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 
+import com.example.photogallery.network.FlickrFetch;
+
 import java.io.IOException;
-import java.lang.annotation.Target;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -108,7 +109,7 @@ public class ThumbnailDownload<T> extends HandlerThread {
             };
             Message m = mHandler.obtainMessage();
             m.callback = myRunnable;
-             callback - то код, который будет выполнен, при получении хэндлером данного сообщения*/
+             callback - тот код, который будет выполнен, при получении хэндлером данного сообщения*/
             mResponseHolder.post(new Runnable() {
                 @Override
                 public void run() {

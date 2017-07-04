@@ -13,6 +13,10 @@ import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.example.photogallery.model.GalleryItem;
+import com.example.photogallery.network.FlickrFetch;
+import com.example.photogallery.photos.PhotoGalleryActivity;
+
 import java.util.List;
 
 /**
@@ -22,7 +26,7 @@ import java.util.List;
 public class PollService extends IntentService {
     private static String TAG = "PollService";
     private static final long POLL_INTERVAL = AlarmManager.INTERVAL_FIFTEEN_MINUTES;
-    public static String ACTION_SHOW_NOTIFICATION = "com.example.photogallery.SHOW_NOTIFICATION";
+    public static final String ACTION_SHOW_NOTIFICATION = "com.example.photogallery.SHOW_NOTIFICATION";
     public static final String PERM_PRIVATE = "com.example.photogallery.PRIVATE";
     public static final String REQUEST_CODE = "REQUEST_CODE";
     public static final String NOTIFICATION = "NOTIFICATION";
@@ -101,7 +105,8 @@ public class PollService extends IntentService {
         return pi != null;
     }
 
-    /**Проверяем, есть ли доступная сеть. Если такая имеется проверяем ее на наличие соединения с помощью
+    /**
+     *Проверяем, есть ли доступная сеть. Если такая имеется проверяем ее на наличие соединения с помощью
      *менеджера соединений, возвращаем истину, если условия выполняются.
      */
     private boolean isNetworkAvailableAndConnected(){
