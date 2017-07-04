@@ -13,6 +13,10 @@ public class GalleryItem {
     private String mUrl;
     @SerializedName("owner")
     private String mOwner;
+    @SerializedName("lat")
+    private double mLat;
+    @SerializedName("lat")
+    private double mLng;
 
     public String getCaption() {
         return mCaption;
@@ -52,6 +56,22 @@ public class GalleryItem {
                 .appendPath(mOwner)
                 .appendPath(mId)
                 .build();
+    }
+
+    public double getmLat() {
+        return mLat;
+    }
+
+    public void setmLat(double mLat) {
+        this.mLat = mLat;
+    }
+
+    public double getmLng() {
+        return mLng;
+    }
+
+    public void setmLng(double mLng) {
+        this.mLng = mLng;
     }
 
     @Override
