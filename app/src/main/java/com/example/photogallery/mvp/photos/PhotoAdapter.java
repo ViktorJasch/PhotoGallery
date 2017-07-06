@@ -1,5 +1,6 @@
-package com.example.photogallery.photos;
+package com.example.photogallery.mvp.photos;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -7,10 +8,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.example.photogallery.model.GalleryItem;
 import com.example.photogallery.R;
-import com.example.photogallery.ThumbnailDownload;
 import com.example.photogallery.bus.PhotoHolderClickedEvent;
+import com.example.photogallery.mvp.model.*;
+import com.squareup.picasso.Picasso;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -19,16 +20,23 @@ import java.util.List;
 
 /**
  * Created by viktor on 02.07.17.
+ * Закомментированные строчки - рудимент, оставшийся просто для вспоминания того,
+ * как работал проект вместе с HandlerThread
  */
 
 public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>{
     List<GalleryItem> galleryItems = new ArrayList<>();
-    ThumbnailDownload<PhotoHolder> thumbnailDownload;
-    Drawable defaultDrawable;
+    Context context;
+    //ThumbnailDownload<PhotoHolder> thumbnailDownload;
+    //Drawable defaultDrawable;
 
-    public PhotoAdapter(ThumbnailDownload thumbnailDownload, Drawable defaultDrawable){
-        this.thumbnailDownload = thumbnailDownload;
-        this.defaultDrawable = defaultDrawable;
+//    public PhotoAdapter(ThumbnailDownload thumbnailDownload, Drawable defaultDrawable){
+//        this.thumbnailDownload = thumbnailDownload;
+//        this.defaultDrawable = defaultDrawable;
+//    }
+
+    public PhotoAdapter(Context context){
+        this.context = context;
     }
 
     @Override
@@ -44,10 +52,10 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
     @Override
     public void onBindViewHolder(PhotoHolder holder, int position) {
         GalleryItem galleryItem = galleryItems.get(position);
-        holder.bindImage(defaultDrawable);
+        //holder.bindImage(defaultDrawable);
         holder.bindGalleryItem(galleryItem);
 
-        thumbnailDownload.queueThumbnail(holder, galleryItem.getUrl());
+        //thumbnailDownload.queueThumbnail(holder, galleryItem.getUrl());
     }
 
     @Override
@@ -59,9 +67,9 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
         galleryItems = items;
     }
 
-     class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         private ImageView mPhoto;
-        private GalleryItem mGalleryItem;
+        private GalleryItem galleryItem;
 
         public PhotoHolder(View itemView) {
             super(itemView);
@@ -74,12 +82,17 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
         }
 
         public void bindGalleryItem(GalleryItem item){
-            mGalleryItem = item;
+            galleryItem = item;
+            Picasso.with(context)
+                    .load(item.getUrl())
+                    .placeholder(R.drawable.bill_up_close)
+                    .into(mPhoto);
         }
 
         @Override
         public void onClick(View v) {
-            EventBus.getDefault().post(new PhotoHolderClickedEvent(mGalleryItem.getPhotoUri()));
+            EventBus.getDefault().post(new PhotoHolderClickedEvent(galleryItem.getPhotoUri()));
         }
+
     }
 }

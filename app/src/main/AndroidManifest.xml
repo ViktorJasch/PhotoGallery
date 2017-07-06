@@ -10,6 +10,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="com.example.photogallery.PRIVATE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+
 
     <application
         android:allowBackup="true"
@@ -17,7 +22,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".photos.PhotoGalleryActivity">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBBj-4c-B97Q5jrXbhP9d0TM16N8pcMvCQ"/>
+
+        <activity android:name=".mvp.photos.PhotoGalleryActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -41,9 +51,11 @@
         </receiver>
 
         <activity
-            android:name=".PhotoPageActivity"
+            android:name=".mvp.page.PhotoPageActivity"
             android:configChanges="keyboardHidden|screenSize|orientation">
         </activity>
+
+        <activity android:name=".mvp.map.LocatrActivity"/>
 
     </application>
 

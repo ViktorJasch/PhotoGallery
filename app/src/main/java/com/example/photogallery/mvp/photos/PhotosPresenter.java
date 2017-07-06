@@ -1,14 +1,14 @@
-package com.example.photogallery.photos;
+package com.example.photogallery.mvp.photos;
 
 import android.os.AsyncTask;
 import android.util.Log;
 
 import com.example.photogallery.Constants;
-import com.example.photogallery.model.Photos;
-import com.example.photogallery.model.PhotosInfo;
+import com.example.photogallery.mvp.model.Photos;
+import com.example.photogallery.mvp.model.PhotosInfo;
 import com.example.photogallery.network.FlickrApi;
 import com.example.photogallery.network.FlickrFetch;
-import com.example.photogallery.model.GalleryItem;
+import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.network.RetrofitClient;
 import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
 
@@ -63,19 +63,19 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
 
     private void getRecentPhoto(){
         Log.d(TAG, "getRecentPhoto: called");
-        client.getRecentPhotos(Constants.API_KEY, "url_s", "json", "1").enqueue(new Callback<Photos>() {
+        client.getRecentPhotos(Constants.API_KEY, "url_s", "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
             @Override
-            public void onResponse(Call<Photos> call, Response<Photos> response) {
+            public void onResponse(Call<Photos<PhotosInfo>> call, Response<Photos<PhotosInfo>> response) {
                 Photos photos = response.body();
-                List<GalleryItem> items = photos
-                        .getInfo()
+                PhotosInfo photosInfo = (PhotosInfo) photos.getInfo();
+                List<GalleryItem> items = photosInfo
                         .getPhoto();
                 getView().setData(items);
                 getView().showContent();
             }
 
             @Override
-            public void onFailure(Call<Photos> call, Throwable t) {
+            public void onFailure(Call<Photos<PhotosInfo>> call, Throwable t) {
                 Log.d(TAG, "onFailure: ");
                 getView().showError(t, false);
             }
@@ -83,9 +83,9 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
     }
 
     private void searchPhoto(String query){
-        client.searchPhoto(Constants.API_KEY, "url_s", query, "json", "1").enqueue(new Callback<Photos>() {
+        client.searchPhoto(Constants.API_KEY, "url_s", query, "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
             @Override
-            public void onResponse(Call<Photos> call, Response<Photos> response) {
+            public void onResponse(Call<Photos<PhotosInfo>> call, Response<Photos<PhotosInfo>> response) {
                 Photos photos = response.body();
                 List<GalleryItem> items = photos
                         .getInfo()
@@ -95,7 +95,7 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
             }
 
             @Override
-            public void onFailure(Call<Photos> call, Throwable t) {
+            public void onFailure(Call<Photos<PhotosInfo>> call, Throwable t) {
                 getView().showError(t, false);
             }
         });

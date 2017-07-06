@@ -1,6 +1,6 @@
-package com.example.photogallery.photos;
+package com.example.photogallery.mvp.photos;
 
-import com.example.photogallery.model.GalleryItem;
+import com.example.photogallery.mvp.model.GalleryItem;
 import com.hannesdorfmann.mosby3.mvp.lce.MvpLceView;
 
 import java.util.List;

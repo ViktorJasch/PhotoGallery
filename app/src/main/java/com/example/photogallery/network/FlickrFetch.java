@@ -3,7 +3,7 @@ package com.example.photogallery.network;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.photogallery.model.GalleryItem;
+import com.example.photogallery.mvp.model.GalleryItem;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 

@@ -13,9 +13,9 @@ import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.example.photogallery.model.GalleryItem;
+import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.network.FlickrFetch;
-import com.example.photogallery.photos.PhotoGalleryActivity;
+import com.example.photogallery.mvp.photos.PhotoGalleryActivity;
 
 import java.util.List;
 

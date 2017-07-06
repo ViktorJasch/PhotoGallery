@@ -1,21 +1,18 @@
-package com.example.photogallery.model;
+package com.example.photogallery.mvp.model;
 
 import com.google.gson.annotations.SerializedName;
-import com.google.gson.internal.Primitives;
 
 import java.util.List;
 
 /**
- * Created by viktor on 03.07.17.
+ * Created by viktor on 05.07.17.
  */
 
-public class PhotosInfo {
+public abstract class AbstractPhotosInfo<T extends GalleryItem> {
     @SerializedName("page")
     private Integer page;
     @SerializedName("pages")
     private Integer pages;
-    @SerializedName("photo")
-    private List<GalleryItem> photo;
 
     public Integer getPage() {
         return page;
@@ -33,11 +30,6 @@ public class PhotosInfo {
         this.pages = pages;
     }
 
-    public List<GalleryItem> getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(List<GalleryItem> photo) {
-        this.photo = photo;
-    }
+    public abstract List<T> getPhoto();
+    public abstract void setPhoto(List<T> photo);
 }

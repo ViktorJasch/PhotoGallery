@@ -55,7 +55,6 @@ public class ThumbnailDownload<T> extends HandlerThread {
             //закидываем а таблицу новый элемент
             mRequestMap.put(obj, url);
             //составляем сообщение. Так как оно создается из Handler, то он и является обработчиком
-            //(типа сам намусорил - убери за собой)
             //sendToTarget - метод класса Message, отправляет сообщение объекту, обозначенному в поле target сообщения
             //В данном случае это Handler
             mRequestHandler.obtainMessage(MESSAGE_DOWNLOAD, obj)

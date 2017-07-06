@@ -15,4 +15,10 @@
           android:title="@string/start_polling"
           app:showAsAction="ifRoom"/>
 
+    <item
+        android:id="@+id/action_locate"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="@string/search_near"
+        app:showAsAction="ifRoom"/>
+
 </menu>

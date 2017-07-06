@@ -1,4 +1,4 @@
-package com.example.photogallery.photos;
+package com.example.photogallery.mvp.photos;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -23,8 +23,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.photogallery.model.GalleryItem;
-import com.example.photogallery.PhotoPageActivity;
+import com.example.photogallery.mvp.map.LocatrActivity;
+import com.example.photogallery.mvp.model.GalleryItem;
+import com.example.photogallery.mvp.page.*;
+import com.example.photogallery.mvp.photos.PhotoAdapter;
 import com.example.photogallery.PollService;
 import com.example.photogallery.QueryPreferences;
 import com.example.photogallery.R;
@@ -121,6 +123,7 @@ public class PhotoGalleryFragment extends
         Log.i(TAG, "onDestroy: Background thread destroyed");
     }
 
+    //Этот участок нужен был до использования Picasso
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -178,6 +181,10 @@ public class PhotoGalleryFragment extends
                 PollService.setServiceAlarm(getActivity(), !ShouldStartAlarm);
                 getActivity().invalidateOptionsMenu();
                 return true;
+            case R.id.action_locate:
+                Intent intent = LocatrActivity.newIntent(getActivity());
+                startActivity(intent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -200,7 +207,7 @@ public class PhotoGalleryFragment extends
     }
 
     private void recycleViewPrepare(){
-        adapter = new PhotoAdapter(mThumbnailDownload, defaultDrawable);
+        adapter = new PhotoAdapter(getActivity());
         mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
         setupAdapter();
     }

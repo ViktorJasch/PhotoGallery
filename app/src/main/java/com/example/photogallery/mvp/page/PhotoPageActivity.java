@@ -1,9 +1,12 @@
-package com.example.photogallery;
+package com.example.photogallery.mvp.page;
 
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.app.Fragment;
+
+import com.example.photogallery.SingleFragmentActivity;
+import com.example.photogallery.onBackPressedListener;
 
 public class PhotoPageActivity extends SingleFragmentActivity {
     /**

@@ -1,6 +1,10 @@
-package com.example.photogallery;
+package com.example.photogallery.mvp.page;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,16 +20,21 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 
+import com.example.photogallery.PollService;
+import com.example.photogallery.R;
+import com.example.photogallery.onBackPressedListener;
+
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PhotoPageFragment extends VisibleFragment implements onBackPressedListener {
+public class PhotoPageFragment extends Fragment implements onBackPressedListener {
     private static final String ARG_URI = "photo_page_url";
     private static final String TAG = "PhotoPageFragment";
 
     private Uri mUri;
     private WebView mWebView;
     private ProgressBar mProgressBar;
+    private BroadcastReceiver mOnShowNotification;
 
     public static PhotoPageFragment newInstance(Uri uri) {
         Bundle args = new Bundle();
@@ -39,6 +48,14 @@ public class PhotoPageFragment extends VisibleFragment implements onBackPressedL
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mUri = getArguments().getParcelable(ARG_URI);
+        mOnShowNotification = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                Log.i(TAG, "onReceive: canceling notification");
+                setResultCode(Activity.RESULT_CANCELED);
+            }
+        };
     }
 
     @Override
@@ -80,6 +97,20 @@ public class PhotoPageFragment extends VisibleFragment implements onBackPressedL
 
         return view;
 
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //регистрация нового широковещательного приемника
+        IntentFilter filter = new IntentFilter(PollService.ACTION_SHOW_NOTIFICATION);
+        getActivity().registerReceiver(mOnShowNotification, filter, PollService.PERM_PRIVATE, null);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        getActivity().unregisterReceiver(mOnShowNotification);
     }
 
     @Override

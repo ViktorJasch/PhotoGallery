@@ -48,4 +48,12 @@ dependencies {
 
     //picasso
     compile 'com.squareup.picasso:picasso:2.5.2'
+
+    //google service
+    compile 'com.google.android.gms:play-services-location:10.2.4'
+    compile 'com.google.android.gms:play-services-maps:10.2.4'
+    compile 'com.google.maps.android:android-maps-utils:0.4+'
+
+    //круглый imageView
+    compile 'de.hdodenhof:circleimageview:2.1.0'
 }

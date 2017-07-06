@@ -1,4 +1,4 @@
-package com.example.photogallery.model;
+package com.example.photogallery.mvp.model;
 
 import android.net.Uri;
 
@@ -13,10 +13,6 @@ public class GalleryItem {
     private String mUrl;
     @SerializedName("owner")
     private String mOwner;
-    @SerializedName("lat")
-    private double mLat;
-    @SerializedName("lat")
-    private double mLng;
 
     public String getCaption() {
         return mCaption;
@@ -58,24 +54,23 @@ public class GalleryItem {
                 .build();
     }
 
-    public double getmLat() {
-        return mLat;
-    }
-
-    public void setmLat(double mLat) {
-        this.mLat = mLat;
-    }
-
-    public double getmLng() {
-        return mLng;
-    }
-
-    public void setmLng(double mLng) {
-        this.mLng = mLng;
-    }
-
     @Override
     public String toString() {
         return mCaption;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        GalleryItem item = (GalleryItem) obj;
+        return mUrl.equals(item.getUrl()) &&
+                mId.equals(item.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        int res = 17;
+        res = 37 * res + mUrl.hashCode();
+        res = 37 * res + mId.hashCode();
+        return res;
     }
 }

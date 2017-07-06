@@ -1,4 +1,4 @@
-package com.example.photogallery.photos;
+package com.example.photogallery.mvp.photos;
 
 import android.content.Context;
 import android.content.Intent;
