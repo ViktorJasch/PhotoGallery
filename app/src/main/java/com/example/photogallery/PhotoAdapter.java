@@ -1,4 +1,4 @@
-package com.example.photogallery.mvp.photos;
+package com.example.photogallery;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.example.photogallery.R;
 import com.example.photogallery.bus.PhotoHolderClickedEvent;
 import com.example.photogallery.mvp.model.*;
 import com.squareup.picasso.Picasso;
@@ -24,8 +23,8 @@ import java.util.List;
  * как работал проект вместе с HandlerThread
  */
 
-public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>{
-    List<GalleryItem> galleryItems = new ArrayList<>();
+public class PhotoAdapter<T extends GalleryItem> extends RecyclerView.Adapter<PhotoAdapter<T>.PhotoHolder>{
+    List<T> galleryItems = new ArrayList<>();
     Context context;
     //ThumbnailDownload<PhotoHolder> thumbnailDownload;
     //Drawable defaultDrawable;
@@ -51,7 +50,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
 
     @Override
     public void onBindViewHolder(PhotoHolder holder, int position) {
-        GalleryItem galleryItem = galleryItems.get(position);
+        T galleryItem = galleryItems.get(position);
         //holder.bindImage(defaultDrawable);
         holder.bindGalleryItem(galleryItem);
 
@@ -63,13 +62,13 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
         return galleryItems.size();
     }
 
-    public void setPhotos(List<GalleryItem> items){
+    public void setPhotos(List<T> items){
         galleryItems = items;
     }
 
     class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         private ImageView mPhoto;
-        private GalleryItem galleryItem;
+        private T galleryItem;
 
         public PhotoHolder(View itemView) {
             super(itemView);
@@ -81,7 +80,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
             mPhoto.setImageDrawable(item);
         }
 
-        public void bindGalleryItem(GalleryItem item){
+        public void bindGalleryItem(T item){
             galleryItem = item;
             Picasso.with(context)
                     .load(item.getUrl())
@@ -93,6 +92,5 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
         public void onClick(View v) {
             EventBus.getDefault().post(new PhotoHolderClickedEvent(galleryItem.getPhotoUri()));
         }
-
     }
 }

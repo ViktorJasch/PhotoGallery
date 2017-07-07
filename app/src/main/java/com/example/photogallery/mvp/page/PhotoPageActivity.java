@@ -24,7 +24,7 @@ public class PhotoPageActivity extends SingleFragmentActivity {
 
     @Override
     protected Fragment createFragment() {
-        //В Activity хранится экземпляр onBackPressedListener
+        //В Activity хранится экземпляр OnBackPressedListener
         Fragment fragment = PhotoPageFragment.newInstance(getIntent().getData());
         if(fragment instanceof onBackPressedListener)
             mOnBackPressedListener = (onBackPressedListener) fragment;

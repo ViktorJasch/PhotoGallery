@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.example.photogallery.mvp.photos.PollService;
+
 /**
  * Данный класс является автономным приемником (зарегестрирован в манифесте). Получает сообщение от системы
  * при загрузке устройства (BOOT_COMPLETED)

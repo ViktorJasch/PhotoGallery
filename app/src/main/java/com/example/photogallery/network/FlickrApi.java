@@ -17,13 +17,13 @@ public interface FlickrApi {
 
     @GET("?method=flickr.photos.getRecent")
     Call<Photos<PhotosInfo>> getRecentPhotos(
-            @Query("api_key") String apiKey, @Query("extras") String text,
+            @Query("api_key") String apiKey, @Query("extras") String text, @Query("page") int page,
             @Query("format") String format, @Query("nojsoncallback") String num);
 
     @GET("?method=flickr.photos.search")
     Call<Photos<PhotosInfo>> searchPhoto(
-            @Query("api_key") String apiKey, @Query("extras") String text, @Query("text") String query,
-            @Query("format") String format, @Query("nojsoncallback") String num);
+            @Query("api_key") String apiKey, @Query("extras") String text, @Query("page") int page,
+            @Query("text") String query, @Query("format") String format, @Query("nojsoncallback") String num);
 
     @GET("?method=flickr.photos.search")
     Call<Photos<GeoPhotosInfo>> searchGeoPhoto(

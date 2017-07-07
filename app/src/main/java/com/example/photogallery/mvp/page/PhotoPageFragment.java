@@ -20,7 +20,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 
-import com.example.photogallery.PollService;
+import com.example.photogallery.mvp.photos.PollService;
 import com.example.photogallery.R;
 import com.example.photogallery.onBackPressedListener;
 

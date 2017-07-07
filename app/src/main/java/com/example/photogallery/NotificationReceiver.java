@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
+import com.example.photogallery.mvp.photos.PollService;
+
 /**
  * Автономный приемник. Фильтром является ACTION_SHOW_NOTIFICATION. Если приложение запущенно, то
  * данный приемник получает Activity.RESULT_CANCEL и не срабатывает. Если приложение закрыто, то

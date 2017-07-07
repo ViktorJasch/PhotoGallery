@@ -1,17 +1,22 @@
 package com.example.photogallery.mvp.photos;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -23,14 +28,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.example.photogallery.CustomScrollListener;
 import com.example.photogallery.mvp.map.LocatrActivity;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.page.*;
-import com.example.photogallery.mvp.photos.PhotoAdapter;
-import com.example.photogallery.PollService;
+import com.example.photogallery.PhotoAdapter;
 import com.example.photogallery.QueryPreferences;
 import com.example.photogallery.R;
-import com.example.photogallery.ThumbnailDownload;
 import com.example.photogallery.bus.PhotoHolderClickedEvent;
 import com.hannesdorfmann.mosby3.mvp.lce.MvpLceFragment;
 
@@ -38,6 +42,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import butterknife.BindDrawable;
@@ -50,17 +55,23 @@ import butterknife.ButterKnife;
 
 public class PhotoGalleryFragment extends
         MvpLceFragment<SwipeRefreshLayout, List<GalleryItem>,
-        PhotosView, PhotosPresenter> implements PhotosView{
+        PhotosView, PhotosPresenter> implements PhotosView,
+        SwipeRefreshLayout.OnRefreshListener, CustomScrollListener.LoadingListener{
     private static final String TAG = "PhotoGalleryFragment";
+    private static final int PERMISSION_ACCESS_FINE_LOCATION = 1;
 
     @BindView(R.id.fragment_photoGallery_recycleView)
     RecyclerView mRecyclerView;
     @BindDrawable(R.drawable.bill_up_close)
     Drawable defaultDrawable;
 
-    List<GalleryItem> mList = new ArrayList<>();
     private PhotoAdapter adapter;
-    private ThumbnailDownload<PhotoAdapter.PhotoHolder> mThumbnailDownload;
+    private GridLayoutManager manager;
+    private CustomScrollListener scrollListener;
+    private List<GalleryItem> items;
+    private ProgressDialog pd;
+    //для бесконечной прокрутки
+    boolean loadingMoreElements = false;
     //Данный приемник срабатывает только когда приложение запущенно (так как он динамический).
     //Фильтром является ACTION_SHOW_NOTIFICATION. Сообщения с таким тегом вызываются при появлении новых фото
     //в классе PollService методом showBackgroundNotification.
@@ -73,6 +84,7 @@ public class PhotoGalleryFragment extends
         Log.d(TAG, "onCreate: ");
         setHasOptionsMenu(true);
         setRetainInstance(true);
+        items = new ArrayList<>(128);
         mOnShowNotification = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -80,7 +92,6 @@ public class PhotoGalleryFragment extends
                 setResultCode(Activity.RESULT_CANCELED);
             }
         };
-        handlerThreadPrepare();
         Log.i(TAG, "onCreate: Background thread started");
     }
 
@@ -98,6 +109,7 @@ public class PhotoGalleryFragment extends
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        contentView.setOnRefreshListener(this);
         loadData(false);
     }
 
@@ -119,7 +131,7 @@ public class PhotoGalleryFragment extends
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mThumbnailDownload.quit();
+        //mThumbnailDownload.quit();
         Log.i(TAG, "onDestroy: Background thread destroyed");
     }
 
@@ -130,7 +142,7 @@ public class PhotoGalleryFragment extends
         //при нажатии на элемент представления, будет получено фото в полный объем,
         // но при повороте экрана может оказаться, что ThumbnailDownload
         // (которому плевать на изменение конфигурации), не связан с текущим представлением
-        mThumbnailDownload.clearQueue();
+        //mThumbnailDownload.clearQueue();
     }
 
     @Override
@@ -182,8 +194,15 @@ public class PhotoGalleryFragment extends
                 getActivity().invalidateOptionsMenu();
                 return true;
             case R.id.action_locate:
-                Intent intent = LocatrActivity.newIntent(getActivity());
-                startActivity(intent);
+                if (ContextCompat.checkSelfPermission(getActivity(),
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED){
+                    Log.d(TAG, "loadData: if permissions need");
+                    locationPermissionRequestAndExplain();
+                } else{
+                    Intent intent = LocatrActivity.newIntent(getActivity());
+                    startActivity(intent);
+                }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -208,28 +227,11 @@ public class PhotoGalleryFragment extends
 
     private void recycleViewPrepare(){
         adapter = new PhotoAdapter(getActivity());
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
+        manager = new GridLayoutManager(getActivity(), 3);
+        scrollListener = new CustomScrollListener(manager, this);
+        mRecyclerView.setLayoutManager(manager);
+        mRecyclerView.addOnScrollListener(scrollListener);
         setupAdapter();
-    }
-
-    private void handlerThreadPrepare(){
-        Handler responseHandler = new Handler();
-        mThumbnailDownload = new ThumbnailDownload<>(responseHandler);
-        mThumbnailDownload.setThumbDownloadListener(new ThumbnailDownload.ThumbnailDownloadListener<PhotoAdapter.PhotoHolder>(){
-            @Override
-            public void onThumbDownloaded(PhotoAdapter.PhotoHolder obj, Bitmap thumbnail) {
-                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
-                obj.bindImage(drawable);
-            }
-        });
-        mThumbnailDownload.start();
-        mThumbnailDownload.getLooper();
-    }
-
-    @Override
-    public void showContent() {
-        super.showContent();
-        contentView.setRefreshing(false);
     }
 
     @Override
@@ -246,7 +248,16 @@ public class PhotoGalleryFragment extends
 
     @Override
     public void setData(List<GalleryItem> data) {
-        adapter.setPhotos(data);
+        if(loadingMoreElements){
+            List<GalleryItem> freshItems = data;
+            Collections.reverse(freshItems);
+            items.addAll(freshItems);
+            setLoadingMoreElements(false);
+        } else{
+            items = data;
+            Collections.reverse(items);
+        }
+        adapter.setPhotos(items);
         adapter.notifyDataSetChanged();
     }
 
@@ -254,7 +265,94 @@ public class PhotoGalleryFragment extends
     public void loadData(boolean pullToRefresh) {
         String query = QueryPreferences.getStoredQuery(getActivity());
         Log.d(TAG, "loadData: presenter == null: " + (presenter == null));
-        presenter.updateItems(query);
+        presenter.updateItems(query, pullToRefresh);
+    }
+
+    @Override
+    public void showLoading(boolean pullToRefresh) {
+        if(loadingMoreElements){
+            pd = new ProgressDialog(getActivity());
+            pd.show();
+        } else
+            super.showLoading(pullToRefresh);
+    }
+
+    @Override
+    public void showContent() {
+        if(pd != null){
+            pd.cancel();
+            pd = null;
+        }
+        contentView.setRefreshing(false);
+        super.showContent();
+    }
+
+    @Override
+    public void loadMoreData() {
+        String query = QueryPreferences.getStoredQuery(getActivity());
+        Log.d(TAG, "loadData: presenter == null: " + (presenter == null));
+        presenter.loadMore(query);
+    }
+
+    @Override
+    public void onRefresh() {
+        Log.d(TAG, "onRefresh: ");
+        contentView.setRefreshing(true);
+        loadData(true);
+    }
+
+    @Override
+    public void loadMoreItems() {
+        Log.d(TAG, "loadMoreItems: called");
+        setLoadingMoreElements(true);
+        loadData(false);
+    }
+
+    private void setLoadingMoreElements(boolean isLoading){
+        loadingMoreElements = isLoading;
+        scrollListener.setLoading(isLoading);
+    }
+
+    //Методы для запроса разрешение на получение геопозиционных данных
+    private void locationPermissionRequestAndExplain() {
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            Log.d(TAG, "locationPermissionRequestAndExplain: need explain");
+            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            builder.setMessage(R.string.fine_location_explanation);
+            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    requestFineLocationPermission();
+                }
+            });
+            builder.create().show();
+
+        } else {
+            Log.d(TAG, "locationPermissionRequestAndExplain: request");
+            requestFineLocationPermission();
+        }
+    }
+
+    private void requestFineLocationPermission() {
+        requestPermissions(
+                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                PERMISSION_ACCESS_FINE_LOCATION);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult: start, request code = " + requestCode);
+        switch (requestCode){
+            case PERMISSION_ACCESS_FINE_LOCATION:
+                Log.d(TAG, "onRequestPermissionsResult: switch");
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    Intent intent = LocatrActivity.newIntent(getActivity());
+                    startActivity(intent);
+                }
+                return;
+        }
     }
 
     @Subscribe

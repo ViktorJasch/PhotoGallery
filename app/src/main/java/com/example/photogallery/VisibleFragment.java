@@ -9,6 +9,8 @@ import android.content.IntentFilter;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 
+import com.example.photogallery.mvp.photos.PollService;
+
 /**
  * Класс необходим для регистрации динамического приемника широковещательных сообщений
  * (mOnShowNotification) при запуске приложения

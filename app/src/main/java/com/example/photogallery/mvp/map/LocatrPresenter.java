@@ -4,6 +4,7 @@ import android.location.Location;
 import android.util.Log;
 
 import com.example.photogallery.Constants;
+import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.model.GeoGalleryItem;
 import com.example.photogallery.mvp.model.GeoPhotosInfo;
 import com.example.photogallery.mvp.model.Photos;
@@ -36,6 +37,7 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
     }
 
     protected void findImage(GoogleApiClient gac){
+
         Log.d(TAG, "findImage: view is " + isViewAttached());
         final LocationRequest locReq = LocationRequest.create();
         locReq.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);

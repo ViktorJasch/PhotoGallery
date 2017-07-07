@@ -35,7 +35,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".PollService"/>
+        <service android:name=".mvp.photos.PollService"/>
 
         <receiver android:name=".StartupReceiver">
             <intent-filter>

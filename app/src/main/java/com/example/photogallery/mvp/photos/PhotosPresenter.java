@@ -7,7 +7,6 @@ import com.example.photogallery.Constants;
 import com.example.photogallery.mvp.model.Photos;
 import com.example.photogallery.mvp.model.PhotosInfo;
 import com.example.photogallery.network.FlickrApi;
-import com.example.photogallery.network.FlickrFetch;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.network.RetrofitClient;
 import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
@@ -24,46 +23,34 @@ import retrofit2.Response;
 
 public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
     private static final String TAG = "PhotosPresenter";
+    private int searchPage = 1;
+    private int recentPage = 1;
     FlickrApi client = RetrofitClient
             .getService(FlickrApi.class);
 
-    public void updateItems(String query){
+    public void loadMore(String query){
         getView().showLoading(false);
-//        new FetchItemsTask(query).execute();
+        if(query == null){
+            getRecentPhoto(recentPage);
+            recentPage++;
+        }
+        else{
+            searchPhoto(query, searchPage);
+            searchPage++;
+        }
+    }
+
+    public void updateItems(String query, boolean pullToRefresh){
+        getView().showLoading(pullToRefresh);
         if(query == null)
-            getRecentPhoto();
+            getRecentPhoto(1);
         else
-            searchPhoto(query);
+            searchPhoto(query, 1);
     }
 
-    /** Решение с AsyncTask */
-    private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>> {
-        private String mQuery;
-
-        public FetchItemsTask(String query){
-            mQuery = query;
-        }
-
-        @Override
-        protected List<GalleryItem> doInBackground(Void... params) {
-            if(mQuery == null)
-                return new FlickrFetch().fetchRecentPhoto();
-            else
-                return new FlickrFetch().searchPhoto(mQuery);
-        }
-
-        @Override
-        protected void onPostExecute(List<GalleryItem> items) {
-            getView().setData(items);
-            getView().showContent();
-//            mList = items;
-//            setupAdapter();
-        }
-    }
-
-    private void getRecentPhoto(){
+    private void getRecentPhoto(int page){
         Log.d(TAG, "getRecentPhoto: called");
-        client.getRecentPhotos(Constants.API_KEY, "url_s", "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
+        client.getRecentPhotos(Constants.API_KEY, "url_s", page, "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
             @Override
             public void onResponse(Call<Photos<PhotosInfo>> call, Response<Photos<PhotosInfo>> response) {
                 Photos photos = response.body();
@@ -82,8 +69,8 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
         });
     }
 
-    private void searchPhoto(String query){
-        client.searchPhoto(Constants.API_KEY, "url_s", query, "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
+    private void searchPhoto(String query, int page){
+        client.searchPhoto(Constants.API_KEY, "url_s", page, query, "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
             @Override
             public void onResponse(Call<Photos<PhotosInfo>> call, Response<Photos<PhotosInfo>> response) {
                 Photos photos = response.body();

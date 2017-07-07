@@ -4,28 +4,35 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 
 import com.example.photogallery.SingleFragmentActivity;
-import com.example.photogallery.mvp.page.PhotoPageActivity;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
 //TODO добавить динамическое добавление разрешений
 public class LocatrActivity extends SingleFragmentActivity {
+    private final String TAG_FRAGMENT_LOCATR = "locatrFragment";
     private static final int REQUEST_CODE = 0;
     private static final String TAG = "LocatrActivity";
+    private OnBackPressedListener listener = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Fragment fragment = getSupportFragmentManager().findFragmentByTag(TAG_FRAGMENT_LOCATR);
+        Log.d(TAG, "onCreate: fragment = null " + (fragment == null));
+        listener = (OnBackPressedListener) fragment;
     }
 
     @Override
     protected Fragment createFragment() {
-        return LocatrFragment.newInstance();
+        setFragmentTag(TAG_FRAGMENT_LOCATR);
+        Fragment fragment = LocatrFragment.newInstance();
+        listener = (OnBackPressedListener) fragment;
+        return fragment;
     }
 
     @Override
@@ -48,8 +55,24 @@ public class LocatrActivity extends SingleFragmentActivity {
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        Log.d(TAG, "onBackPressed: listener = null " + (listener == null));
+        if(listener != null){
+            if(!listener.onBackPressed())
+                super.onBackPressed();
+        }
+    }
+
     public static Intent newIntent(Context context){
         Intent i = new Intent(context, LocatrActivity.class);
         return i;
+    }
+
+    //Для обработки событий onBackPressed во фрагментах
+    public interface OnBackPressedListener {
+        //если фрагменту не нужно обробатывать нажатие, то возвращается false.
+        //Активность в этом случае вызывает метод родителя
+        boolean onBackPressed();
     }
 }

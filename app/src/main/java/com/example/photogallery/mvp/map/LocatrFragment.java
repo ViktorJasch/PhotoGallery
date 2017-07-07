@@ -1,24 +1,37 @@
 package com.example.photogallery.mvp.map;
 
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.photogallery.PhotoAdapter;
 import com.example.photogallery.R;
+import com.example.photogallery.bus.PhotoHolderClickedEvent;
 import com.example.photogallery.mvp.model.GeoGalleryItem;
 import com.example.photogallery.mvp.page.PhotoPageActivity;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -26,28 +39,45 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
-import com.google.maps.android.clustering.ClusterItem;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
+import com.sothree.slidinguppanel.ScrollableViewHelper;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 /**
  * A simple {@link Fragment} subclass.
  */
-public class LocatrFragment extends SupportMapFragment implements LocatrView, ClusterManager.OnClusterClickListener<GeoGalleryItem>, ClusterManager.OnClusterItemClickListener<GeoGalleryItem>{
+public class LocatrFragment extends Fragment implements LocatrView, ClusterManager.OnClusterClickListener<GeoGalleryItem>, ClusterManager.OnClusterItemClickListener<GeoGalleryItem>, LocatrActivity.OnBackPressedListener {
+    @BindView(R.id.mapView)
+    MapView mMapView;
+    @BindView(R.id.clusterList)
+    RecyclerView mClusterList;
+    @BindView(R.id.slidingLayout)
+    SlidingUpPanelLayout mSlidingLayout;
+
+    private boolean slidingPanelIsHidden;
+    private PhotoAdapter adapter;
     private LocatrPresenter presenter;
     private GoogleApiClient mClient;
     private GoogleMap mMap;
@@ -55,8 +85,8 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
     private LatLngBounds.Builder boundsBuild;
     private ProgressDialog pd;
     private Map<GeoGalleryItem, Bitmap> hashMap;
+    private List<GeoGalleryItem> itemsList;
     private ClusterManager<GeoGalleryItem> clusterManager;
-    private GeoGalleryItem someItem;
     private static final String TAG = "LocatrFragment";
 
     public static LocatrFragment newInstance() {
@@ -69,32 +99,36 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         setHasOptionsMenu(true);
-        hashMap = new HashMap<>(100);
+        Log.d(TAG, "onCreate: ");
+        hashMap = new HashMap<>(128);
         presenter = new LocatrPresenter(this);
-        if(hashMap != null)
-            hashMap.clear();
-        mClient = new GoogleApiClient.Builder(getActivity())
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(@Nullable Bundle bundle) {
-                        getActivity().invalidateOptionsMenu();
-                        loadData(false);
-                    }
+        itemsList = new ArrayList<>(68);
+        googleApiClientInit();
+    }
 
-                    @Override
-                    public void onConnectionSuspended(int i) {
-                    }
-                })
-                .build();
-
-        getMapAsync(new OnMapReadyCallback() {
+    @Override
+    public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
+        View view = layoutInflater.inflate(R.layout.fragment_app_map, viewGroup, false);
+        ButterKnife.bind(this, view);
+        mMapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {
                 mMap = googleMap;
                 clusterInit();
             }
         });
+        Log.d(TAG, "onCreateView: mMapView = null: " + (mMapView == null));
+        slidingPanelIsHidden = true;
+        GridLayoutManager layoutManager = new GridLayoutManager(getActivity(), 3);
+        adapter = new PhotoAdapter<>(getActivity());
+        mClusterList.setLayoutManager(layoutManager);
+        mClusterList.setAdapter(adapter);
+        mSlidingLayout.setScrollableViewHelper(new ScrollableViewHelper());
+        mSlidingLayout.setAnchorPoint(0.7f);
+        mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+        mMapView.onCreate(bundle);
+
+        return view;
     }
 
     @Override
@@ -112,22 +146,62 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
             case R.id.action_locate:
                 showPhoto();
                 return true;
+            case R.id.action_settings:
+                mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.ANCHORED);
+                slidingPanelIsHidden = false;
+                Log.d(TAG, "onOptionsItemSelected: done");
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
 }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        Bundle mapState = new Bundle();
+        mMapView.onSaveInstanceState(mapState);
+        super.onSaveInstanceState(outState);
+    }
+
+    //Жизненный цикл для mMapView
+    @Override
+    public void onResume() {
+        Log.d(TAG, "onResume: mMapView = null: " + (mMapView == null));
+        super.onResume();
+        mMapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mMapView.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mMapView.onDestroy();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mMapView.onLowMemory();
+    }
+    @Override
     public void onStart() {
         super.onStart();
         getActivity().invalidateOptionsMenu();
         mClient.connect();
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        mMapView.onStop();
         mClient.disconnect();
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -152,6 +226,9 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
     @Override
     public void setData(List<GeoGalleryItem> data) {
         boundsBuild = new LatLngBounds.Builder();
+        itemsList = data;
+        adapter.setPhotos(itemsList);
+        adapter.notifyDataSetChanged();
         for(final GeoGalleryItem item : data){
             boundsBuild.include(new LatLng(item.getLat(), item.getLng()));
             hashMap.clear();
@@ -161,7 +238,6 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
                         @Override
                         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                             hashMap.put(item, bitmap);
-                            Log.d(TAG, "onBitmapLoaded: work is done");
                         }
 
                         @Override
@@ -171,7 +247,6 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
 
                         @Override
                         public void onPrepareLoad(Drawable placeHolderDrawable) {
-                            Log.d(TAG, "onPrepareLoad: prepare");
                         }
                     });
         }
@@ -188,6 +263,10 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
 
     @Override
     public boolean onClusterClick(Cluster<GeoGalleryItem> cluster) {
+        adapter.setPhotos(new ArrayList(cluster.getItems()));
+        adapter.notifyDataSetChanged();
+        mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.ANCHORED);
+        slidingPanelIsHidden = false;
         return false;
     }
 
@@ -201,6 +280,16 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
     @Override
     public void setLocation(Location location) {
         mCurrentLocation = location;
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        if(!slidingPanelIsHidden){
+            mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+            slidingPanelIsHidden = true;
+            return true;
+        }
+        return false;
     }
 
     private class GeoGalleryItemRenderer extends DefaultClusterRenderer<GeoGalleryItem>{
@@ -273,5 +362,30 @@ public class LocatrFragment extends SupportMapFragment implements LocatrView, Cl
         MarkerOptions myMarker = new MarkerOptions()
                 .position(myPoint);
         mMap.addMarker(myMarker);
+    }
+
+    private void googleApiClientInit() {
+        mClient = new GoogleApiClient.Builder(getActivity())
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(@Nullable Bundle bundle) {
+                        Log.d(TAG, "onConnected: ");
+                        getActivity().invalidateOptionsMenu();
+                        loadData(false);
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                    }
+                })
+                .build();
+    }
+
+    @Subscribe
+    public void onPhotoHolderClickedEvent(PhotoHolderClickedEvent event){
+        Intent i = PhotoPageActivity
+                .newIntent(getActivity(), event.getPhotoUri());
+        startActivity(i);
     }
 }

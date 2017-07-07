@@ -15,6 +15,7 @@ import android.util.Log;
 //этот абстрактный класс реализует интерфейс создания любого фрагмента
 public abstract class SingleFragmentActivity extends AppCompatActivity {
     private static final String TAG = "SingleFragmentActivity";
+    private String fragmentTag = null;
 
     protected abstract Fragment createFragment();
 
@@ -30,8 +31,19 @@ public abstract class SingleFragmentActivity extends AppCompatActivity {
         if(fragment == null){
             fragment = createFragment();
             FragmentTransaction ft =  fm.beginTransaction();
-            ft.add(R.id.fragment_container, fragment);
+            if(fragmentTag != null){
+                ft.add(R.id.fragment_container, fragment, fragmentTag);
+                Log.d(TAG, "onCreate: fragment with tag");
+            }
+            else
+                ft.add(R.id.fragment_container, fragment);
+
             ft.commit();
+            fm.executePendingTransactions();
         }
+    }
+
+    public void setFragmentTag(String fragmentTag) {
+        this.fragmentTag = fragmentTag;
     }
 }

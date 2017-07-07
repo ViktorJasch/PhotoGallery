@@ -10,4 +10,5 @@ import java.util.List;
  */
 
 public interface PhotosView extends MvpLceView<List<GalleryItem>> {
+    void loadMoreData();
 }
