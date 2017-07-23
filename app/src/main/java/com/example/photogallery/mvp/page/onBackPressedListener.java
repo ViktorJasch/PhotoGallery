@@ -1,4 +1,4 @@
-package com.example.photogallery;
+package com.example.photogallery.mvp.page;
 
 /**
  * C данным интерфейсом будем реализовывать кликабельность кнопки back во фрагменте PhotoPageFragment.

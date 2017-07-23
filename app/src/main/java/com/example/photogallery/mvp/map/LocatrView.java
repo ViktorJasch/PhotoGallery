@@ -3,6 +3,8 @@ package com.example.photogallery.mvp.map;
 import android.location.Location;
 
 import com.example.photogallery.mvp.model.GeoGalleryItem;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.hannesdorfmann.mosby3.mvp.lce.MvpLceView;
 
 import java.util.List;
@@ -12,5 +14,5 @@ import java.util.List;
  */
 
 public interface LocatrView extends MvpLceView<List<GeoGalleryItem>> {
-    void setLocation(Location location);
+    void showPhoto(CameraUpdate update, MarkerOptions myMarker);
 }

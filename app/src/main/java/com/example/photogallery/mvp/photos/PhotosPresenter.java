@@ -1,21 +1,18 @@
 package com.example.photogallery.mvp.photos;
 
-import android.os.AsyncTask;
 import android.util.Log;
 
-import com.example.photogallery.Constants;
-import com.example.photogallery.mvp.model.Photos;
-import com.example.photogallery.mvp.model.PhotosInfo;
-import com.example.photogallery.network.FlickrApi;
 import com.example.photogallery.mvp.model.GalleryItem;
-import com.example.photogallery.network.RetrofitClient;
+import com.example.photogallery.network.Requests;
 import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import rx.Observer;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by viktor on 02.07.17.
@@ -23,68 +20,89 @@ import retrofit2.Response;
 
 public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
     private static final String TAG = "PhotosPresenter";
+    private List<GalleryItem> items = new ArrayList<>(128);
     private int searchPage = 1;
     private int recentPage = 1;
-    FlickrApi client = RetrofitClient
-            .getService(FlickrApi.class);
 
     public void loadMore(String query){
+        Log.d(TAG, "loadMore: ");
         getView().showLoading(false);
         if(query == null){
-            getRecentPhoto(recentPage);
             recentPage++;
+            getRecentPhoto(recentPage, false);
         }
         else{
-            searchPhoto(query, searchPage);
             searchPage++;
+            searchPhoto(query, searchPage, false);
         }
     }
 
-    public void updateItems(String query, boolean pullToRefresh){
+    public void loadItems(String query, boolean pullToRefresh){
+        Log.d(TAG, "loadItems: ");
         getView().showLoading(pullToRefresh);
-        if(query == null)
-            getRecentPhoto(1);
-        else
-            searchPhoto(query, 1);
+        if(query == null){
+            getRecentPhoto(recentPage = 1, pullToRefresh);
+        }
+        else{
+            searchPhoto(query, searchPage = 1, pullToRefresh);
+        }
     }
 
-    private void getRecentPhoto(int page){
-        Log.d(TAG, "getRecentPhoto: called");
-        client.getRecentPhotos(Constants.API_KEY, "url_s", page, "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
-            @Override
-            public void onResponse(Call<Photos<PhotosInfo>> call, Response<Photos<PhotosInfo>> response) {
-                Photos photos = response.body();
-                PhotosInfo photosInfo = (PhotosInfo) photos.getInfo();
-                List<GalleryItem> items = photosInfo
-                        .getPhoto();
-                getView().setData(items);
-                getView().showContent();
-            }
+    private void getRecentPhoto(final int page, final boolean pullToRefresh){
+        Log.d(TAG, "getRecentPhoto: called, page = " + page);
+        Requests.getRecentPhoto(page).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
+                .subscribe(new Observer<List<GalleryItem>>() {
+                    @Override
+                    public void onCompleted() {
+                        getView().setData(items);
+                        getView().showContent();
+                    }
 
-            @Override
-            public void onFailure(Call<Photos<PhotosInfo>> call, Throwable t) {
-                Log.d(TAG, "onFailure: ");
-                getView().showError(t, false);
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        getView().showError(e, false);
+                    }
+
+                    @Override
+                    public void onNext(List<GalleryItem> photos) {
+                        Collections.reverse(photos);
+                        doOnResponce(photos, page, pullToRefresh);
+                    }
+                });
     }
 
-    private void searchPhoto(String query, int page){
-        client.searchPhoto(Constants.API_KEY, "url_s", page, query, "json", "1").enqueue(new Callback<Photos<PhotosInfo>>() {
-            @Override
-            public void onResponse(Call<Photos<PhotosInfo>> call, Response<Photos<PhotosInfo>> response) {
-                Photos photos = response.body();
-                List<GalleryItem> items = photos
-                        .getInfo()
-                        .getPhoto();
-                getView().setData(items);
-                getView().showContent();
-            }
+    private void searchPhoto(String query, final int page, final boolean pullToRefresh){
+        Requests.searchPhoto(query, page).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
+                .subscribe(new Observer<List<GalleryItem>>() {
+                    @Override
+                    public void onCompleted() {
+                        getView().setData(items);
+                        getView().showContent();
+                    }
 
-            @Override
-            public void onFailure(Call<Photos<PhotosInfo>> call, Throwable t) {
-                getView().showError(t, false);
-            }
-        });
+                    @Override
+                    public void onError(Throwable e) {
+                        getView().showError(e, false);
+                    }
+
+                    @Override
+                    public void onNext(List<GalleryItem> photos) {
+                        Collections.reverse(photos);
+                        doOnResponce(photos, page, pullToRefresh);
+                    }
+                });
+    }
+
+    private void doOnResponce(List<GalleryItem> freshItems, int page, boolean pullToRefresh) {
+        if(page == 1 || pullToRefresh){
+            items = freshItems;
+        }
+        else{
+            items.addAll(freshItems);
+        }
     }
 }

@@ -4,8 +4,8 @@
       xmlns:tools="http://schemas.android.com/tools"
       tools:context=".LocatrActivity">
     <item
-        android:id="@+id/action_settings"
-        android:title="@string/action_settings"
+        android:id="@+id/action_photo_list"
+        android:title="@string/action_photo_list"
         android:orderInCategory="100"
         app:showAsAction="never"/>
 

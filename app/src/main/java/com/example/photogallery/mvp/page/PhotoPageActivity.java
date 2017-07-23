@@ -6,14 +6,8 @@ import android.net.Uri;
 import android.support.v4.app.Fragment;
 
 import com.example.photogallery.SingleFragmentActivity;
-import com.example.photogallery.onBackPressedListener;
 
 public class PhotoPageActivity extends SingleFragmentActivity {
-    /**
-     * ЗАМЕЧАНИЕ! Эту активность нежелательно использовать в качестве родителя нескольких фрагментов
-     * в данной реализации.
-     * Если
-     */
     private onBackPressedListener mOnBackPressedListener;
 
     public static Intent newIntent(Context context, Uri photoPageUri){

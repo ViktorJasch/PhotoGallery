@@ -22,7 +22,9 @@ import android.widget.ProgressBar;
 
 import com.example.photogallery.mvp.photos.PollService;
 import com.example.photogallery.R;
-import com.example.photogallery.onBackPressedListener;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * A placeholder fragment containing a simple view.
@@ -30,10 +32,12 @@ import com.example.photogallery.onBackPressedListener;
 public class PhotoPageFragment extends Fragment implements onBackPressedListener {
     private static final String ARG_URI = "photo_page_url";
     private static final String TAG = "PhotoPageFragment";
+    @BindView(R.id.fragment_photo_page_web_view)
+    WebView mWebView;
+    @BindView(R.id.fragment_photo_progress_bar)
+    ProgressBar mProgressBar;
 
     private Uri mUri;
-    private WebView mWebView;
-    private ProgressBar mProgressBar;
     private BroadcastReceiver mOnShowNotification;
 
     public static PhotoPageFragment newInstance(Uri uri) {
@@ -62,41 +66,12 @@ public class PhotoPageFragment extends Fragment implements onBackPressedListener
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_photo_page, container, false);
+        ButterKnife.bind(this, view);
 
-        mWebView = (WebView) view.findViewById(R.id.fragment_photo_page_web_view);
-        mProgressBar = (ProgressBar) view.findViewById(R.id.fragment_photo_progress_bar);
-
-        mWebView.getSettings().setJavaScriptEnabled(true);
-        mWebView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
-            }
-        });
-        mWebView.loadUrl(mUri.toString());
-        mWebView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onProgressChanged(WebView view, int newProgress) {
-                if (newProgress == 100) {
-                    mProgressBar.setVisibility(View.GONE);
-                } else {
-                    mProgressBar.setVisibility(View.VISIBLE);
-                    mProgressBar.setProgress(newProgress);
-                }
-            }
-
-            @Override
-            public void onReceivedTitle(WebView view, String title) {
-                AppCompatActivity activity = (AppCompatActivity) getActivity();
-                activity.getSupportActionBar().setSubtitle(title);
-            }
-
-
-        });
+        webViewPrepare();
         mProgressBar.setMax(100);
 
         return view;
-
     }
 
     @Override
@@ -128,5 +103,33 @@ public class PhotoPageFragment extends Fragment implements onBackPressedListener
             return true;
         }
         return false;
+    }
+
+    private void webViewPrepare() {
+        mWebView.getSettings().setJavaScriptEnabled(true);
+        mWebView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return false;
+            }
+        });
+        mWebView.loadUrl(mUri.toString());
+        mWebView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                if (newProgress == 100) {
+                    mProgressBar.setVisibility(View.GONE);
+                } else {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    mProgressBar.setProgress(newProgress);
+                }
+            }
+
+            @Override
+            public void onReceivedTitle(WebView view, String title) {
+                AppCompatActivity activity = (AppCompatActivity) getActivity();
+                activity.getSupportActionBar().setSubtitle(title);
+            }
+        });
     }
 }

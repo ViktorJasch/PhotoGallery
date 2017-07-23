@@ -28,7 +28,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.photogallery.CustomScrollListener;
 import com.example.photogallery.mvp.map.LocatrActivity;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.page.*;
@@ -41,8 +40,6 @@ import com.hannesdorfmann.mosby3.mvp.lce.MvpLceFragment;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import butterknife.BindDrawable;
@@ -68,7 +65,6 @@ public class PhotoGalleryFragment extends
     private PhotoAdapter adapter;
     private GridLayoutManager manager;
     private CustomScrollListener scrollListener;
-    private List<GalleryItem> items;
     private ProgressDialog pd;
     //для бесконечной прокрутки
     boolean loadingMoreElements = false;
@@ -84,7 +80,6 @@ public class PhotoGalleryFragment extends
         Log.d(TAG, "onCreate: ");
         setHasOptionsMenu(true);
         setRetainInstance(true);
-        items = new ArrayList<>(128);
         mOnShowNotification = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -126,23 +121,6 @@ public class PhotoGalleryFragment extends
         super.onStop();
         EventBus.getDefault().unregister(this);
         getActivity().unregisterReceiver(mOnShowNotification);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        //mThumbnailDownload.quit();
-        Log.i(TAG, "onDestroy: Background thread destroyed");
-    }
-
-    //Этот участок нужен был до использования Picasso
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        //при нажатии на элемент представления, будет получено фото в полный объем,
-        // но при повороте экрана может оказаться, что ThumbnailDownload
-        // (которому плевать на изменение конфигурации), не связан с текущим представлением
-        //mThumbnailDownload.clearQueue();
     }
 
     @Override
@@ -248,16 +226,8 @@ public class PhotoGalleryFragment extends
 
     @Override
     public void setData(List<GalleryItem> data) {
-        if(loadingMoreElements){
-            List<GalleryItem> freshItems = data;
-            Collections.reverse(freshItems);
-            items.addAll(freshItems);
-            setLoadingMoreElements(false);
-        } else{
-            items = data;
-            Collections.reverse(items);
-        }
-        adapter.setPhotos(items);
+        setLoadingMoreElements(false);
+        adapter.setPhotos(data);
         adapter.notifyDataSetChanged();
     }
 
@@ -265,7 +235,7 @@ public class PhotoGalleryFragment extends
     public void loadData(boolean pullToRefresh) {
         String query = QueryPreferences.getStoredQuery(getActivity());
         Log.d(TAG, "loadData: presenter == null: " + (presenter == null));
-        presenter.updateItems(query, pullToRefresh);
+        presenter.loadItems(query, pullToRefresh);
     }
 
     @Override
@@ -290,7 +260,6 @@ public class PhotoGalleryFragment extends
     @Override
     public void loadMoreData() {
         String query = QueryPreferences.getStoredQuery(getActivity());
-        Log.d(TAG, "loadData: presenter == null: " + (presenter == null));
         presenter.loadMore(query);
     }
 
@@ -302,10 +271,10 @@ public class PhotoGalleryFragment extends
     }
 
     @Override
-    public void loadMoreItems() {
-        Log.d(TAG, "loadMoreItems: called");
+    public void needMoreElements() {
+        Log.d(TAG, "needMoreElements: called");
         setLoadingMoreElements(true);
-        loadData(false);
+        loadMoreData();
     }
 
     private void setLoadingMoreElements(boolean isLoading){

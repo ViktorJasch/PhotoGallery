@@ -22,13 +22,6 @@ public class PhotoGalleryActivity extends SingleFragmentActivity {
         super.onCreate(savedInstanceState);
     }
 
-//    @Override
-//    protected void onStart() {
-//        Log.d(TAG, "onStart: ");
-//        super.onStart();
-//        Log.d(TAG, "onStart: post");
-//    }
-
     @Override
     protected void onResume() {
         Log.d(TAG, "onResume: ");

@@ -4,16 +4,24 @@ import android.location.Location;
 import android.util.Log;
 
 import com.example.photogallery.Constants;
+import com.example.photogallery.R;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.model.GeoGalleryItem;
 import com.example.photogallery.mvp.model.GeoPhotosInfo;
 import com.example.photogallery.mvp.model.Photos;
 import com.example.photogallery.network.FlickrApi;
+import com.example.photogallery.network.Requests;
 import com.example.photogallery.network.RetrofitClient;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.geometry.Point;
 import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
 
 import java.util.List;
@@ -21,6 +29,10 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import rx.Observer;
+import rx.Scheduler;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by viktor on 05.07.17.
@@ -28,8 +40,6 @@ import retrofit2.Response;
 
 public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
     private static final String TAG = "LocatrPresenter";
-    private FlickrApi client = RetrofitClient
-            .getService(FlickrApi.class);
     private Location currentLocation;
 
     protected LocatrPresenter(LocatrView view){
@@ -60,23 +70,34 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
         }
     }
 
-    private void searchGeoPhoto(String lat, String lon){
-        client.searchGeoPhoto(Constants.API_KEY, "url_s,geo", lat, lon, "json", "1")
-                .enqueue(new Callback<Photos<GeoPhotosInfo>>() {
-            @Override
-            public void onResponse(Call<Photos<GeoPhotosInfo>> call, Response<Photos<GeoPhotosInfo>> response) {
-                Photos<GeoPhotosInfo> photos = response.body();
-                GeoPhotosInfo gpi = photos.getInfo();
-                List<GeoGalleryItem> list = gpi.getPhoto();
-                getView().setLocation(currentLocation);
-                getView().showContent();
-                getView().setData(list.subList(0, 50));
-            }
+    protected void updateLocation(int margin){
+        LatLng myPoint = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(myPoint, 10.0f);
+        MarkerOptions myMarker = new MarkerOptions()
+                .position(myPoint);
+        getView().showPhoto(update, myMarker);
+    }
 
-            @Override
-            public void onFailure(Call<Photos<GeoPhotosInfo>> call, Throwable t) {
-                getView().showError(t, false);
-            }
-        });
+    private void searchGeoPhoto(String lat, String lon){
+        Requests.searchGeoPhoto(lat, lon).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Photos<GeoPhotosInfo>>() {
+                    @Override
+                    public void onCompleted() {
+                        getView().showContent();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        getView().showError(e, false);
+                    }
+
+                    @Override
+                    public void onNext(Photos<GeoPhotosInfo> geoPhotosInfoPhotos) {
+                        GeoPhotosInfo gpi = geoPhotosInfoPhotos.getInfo();
+                        List<GeoGalleryItem> list = gpi.getPhoto();
+                        getView().setData(list.subList(0, 50));
+                    }
+                });
     }
 }

@@ -7,7 +7,7 @@
     <string name="new_pictures_title">New PhotoGallery Pictures</string>
     <string name="new_pictures_text">You have new pictures in PhotoGallery.</string>
     <string name="title_activity_photo_page">PhotoPageActivity</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_photo_list">List of photo</string>
     <string name="search_near">Find an image near you</string>
     <string name="fine_location_explanation">
         Для продолжения необходимо предоставить

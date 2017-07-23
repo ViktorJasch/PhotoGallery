@@ -16,8 +16,18 @@ import android.util.Log;
 import com.example.photogallery.QueryPreferences;
 import com.example.photogallery.R;
 import com.example.photogallery.mvp.model.GalleryItem;
+import com.example.photogallery.mvp.model.Photos;
+import com.example.photogallery.mvp.model.PhotosInfo;
+import com.example.photogallery.network.FlickrApi;
+import com.example.photogallery.network.Requests;
+import com.example.photogallery.network.RetrofitClient;
 
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import rx.Observer;
 
 /**
  * Created by Виктор on 11.01.2017.
@@ -38,32 +48,39 @@ public class PollService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        //необходимо проверить сеть на существование и доступность (ибо с чем еще работать?)
         if(!isNetworkAvailableAndConnected())
             return;
 
         String query = QueryPreferences.getStoredQuery(this);
-        String lastResultId = QueryPreferences.getLastResultId(this);
-        List<GalleryItem> items;
+        final String lastResultId = QueryPreferences.getLastResultId(this);
 
         if(query == null)
-            items = new FlickrFetch().fetchRecentPhoto();
+            Requests.getRecentPhoto(1)
+                    //map - получаем из PhotosInfo лист элементов GalleryItem
+                    .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
+                    .subscribe(photosInfoPhotos -> doOnResponse(photosInfoPhotos, lastResultId),
+                    throwable -> throwable.printStackTrace());
         else
-            items = new FlickrFetch().searchPhoto(query);
+            Requests.searchPhoto(query, 1)
+                    .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
+                    .subscribe(photosInfoPhotos -> doOnResponse(photosInfoPhotos, lastResultId),
+                    throwable -> throwable.printStackTrace());
+    }
 
-        if(items.size() == 0)
+    private void doOnResponse(List<GalleryItem> photos, String lastResultId) {
+        if(photos.size() == 0)
             return;
 
-        String resultId = items.get(0).getId();
+        String resultId = photos.get(0).getId();
         if(resultId.equals(lastResultId))
             Log.i(TAG, "onHandleIntent: Got an old result " + resultId);
         else{
             Log.i(TAG, "onHandleIntent: Got a new result " + resultId);
             Resources res = getResources();
-            Intent i = PhotoGalleryActivity.newIntent(this);
-            PendingIntent pi = PendingIntent.getActivity(this, 0, i, 0);
+            Intent i = PhotoGalleryActivity.newIntent(getApplicationContext());
+            PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0, i, 0);
 
-            Notification notification = new NotificationCompat.Builder(this)
+            Notification notification = new NotificationCompat.Builder(getApplicationContext())
                     .setTicker(res.getString(R.string.new_pictures_title))
                     .setSmallIcon(android.R.drawable.ic_menu_report_image)
                     .setContentTitle(res.getString(R.string.new_pictures_title))
@@ -75,7 +92,7 @@ public class PollService extends IntentService {
             showBackgroundNotification(0, notification);
         }
 
-        QueryPreferences.setLastResultId(this ,resultId);
+        QueryPreferences.setLastResultId(getApplicationContext(), resultId);
     }
 
     public static Intent newIntent(Context context){

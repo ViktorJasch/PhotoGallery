@@ -1,4 +1,4 @@
-package com.example.photogallery;
+package com.example.photogallery.mvp.photos;
 
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,14 +32,14 @@ public class CustomScrollListener extends RecyclerView.OnScrollListener {
                         "visibleItemCount+firstVisibleItems = " + (visibleItemCount+firstVisibleItems));
                 isLoading = true;//ставим флаг что мы попросили еще элемены
                 if(listener != null){
-                    listener.loadMoreItems();//тут я использовал калбэк который просто говорит наружу что нужно еще элементов и с какой позиции начинать загрузку
+                    listener.needMoreElements();//тут я использовал калбэк который просто говорит наружу что нужно еще элементов и с какой позиции начинать загрузку
                 }
             }
         }
     }
 
     public interface LoadingListener {
-        void loadMoreItems();
+        void needMoreElements();
     }
 
     public void setLoading(boolean loading) {

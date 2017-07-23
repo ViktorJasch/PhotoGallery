@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
 
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
@@ -23,19 +24,21 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class RetrofitClient {
-    private static final String TAG = "RetrofitClient";
-
-
-    public static <S> S getService(Class<S> serviceClass){
+    static {
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
 
         Retrofit.Builder builder = new Retrofit.Builder()
                 .baseUrl(Constants.END_POINT)
                 .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .client(httpClient.build());
 
-        Retrofit retrofit = builder.build();
+        retrofit = builder.build();
+    }
+    private static final String TAG = "RetrofitClient";
+    private static Retrofit retrofit;
 
+    public static <S> S getService(Class<S> serviceClass){
         return retrofit.create(serviceClass);
     }
 }

@@ -1,22 +1,14 @@
 package com.example.photogallery.mvp.map;
 
 
-import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -37,13 +29,11 @@ import com.example.photogallery.mvp.page.PhotoPageActivity;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
@@ -68,7 +58,9 @@ import butterknife.ButterKnife;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class LocatrFragment extends Fragment implements LocatrView, ClusterManager.OnClusterClickListener<GeoGalleryItem>, ClusterManager.OnClusterItemClickListener<GeoGalleryItem>, LocatrActivity.OnBackPressedListener {
+public class LocatrFragment extends Fragment implements LocatrView, ClusterManager.OnClusterClickListener<GeoGalleryItem>,
+        ClusterManager.OnClusterItemClickListener<GeoGalleryItem>, LocatrActivity.OnBackPressedListener,
+        GoogleMap.OnMapClickListener{
     @BindView(R.id.mapView)
     MapView mMapView;
     @BindView(R.id.clusterList)
@@ -81,11 +73,8 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
     private LocatrPresenter presenter;
     private GoogleApiClient mClient;
     private GoogleMap mMap;
-    private Location mCurrentLocation;
-    private LatLngBounds.Builder boundsBuild;
     private ProgressDialog pd;
     private Map<GeoGalleryItem, Bitmap> hashMap;
-    private List<GeoGalleryItem> itemsList;
     private ClusterManager<GeoGalleryItem> clusterManager;
     private static final String TAG = "LocatrFragment";
 
@@ -102,7 +91,6 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
         Log.d(TAG, "onCreate: ");
         hashMap = new HashMap<>(128);
         presenter = new LocatrPresenter(this);
-        itemsList = new ArrayList<>(68);
         googleApiClientInit();
     }
 
@@ -144,17 +132,16 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.action_locate:
-                showPhoto();
+                presenter.updateLocation(getResources().getDimensionPixelOffset(R.dimen.map_inset_margin));
                 return true;
-            case R.id.action_settings:
+            case R.id.action_photo_list:
                 mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.ANCHORED);
                 slidingPanelIsHidden = false;
-                Log.d(TAG, "onOptionsItemSelected: done");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
-}
+    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -225,19 +212,17 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
 
     @Override
     public void setData(List<GeoGalleryItem> data) {
-        boundsBuild = new LatLngBounds.Builder();
-        itemsList = data;
-        adapter.setPhotos(itemsList);
+        adapter.setPhotos(data);
         adapter.notifyDataSetChanged();
+        hashMap.clear();
         for(final GeoGalleryItem item : data){
-            boundsBuild.include(new LatLng(item.getLat(), item.getLng()));
-            hashMap.clear();
             Picasso.with(getActivity())
                     .load(item.getUrl())
                     .into(new Target() {
                         @Override
                         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                             hashMap.put(item, bitmap);
+                            Log.d(TAG, "onBitmapLoaded: done");
                         }
 
                         @Override
@@ -278,11 +263,6 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
     }
 
     @Override
-    public void setLocation(Location location) {
-        mCurrentLocation = location;
-    }
-
-    @Override
     public boolean onBackPressed() {
         if(!slidingPanelIsHidden){
             mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
@@ -290,6 +270,12 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void onMapClick(LatLng latLng) {
+        mSlidingLayout.setPanelState(SlidingUpPanelLayout.PanelState.HIDDEN);
+        slidingPanelIsHidden = true;
     }
 
     private class GeoGalleryItemRenderer extends DefaultClusterRenderer<GeoGalleryItem>{
@@ -321,10 +307,14 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
 
         @Override
         protected void onBeforeClusterItemRendered(GeoGalleryItem item, MarkerOptions markerOptions) {
-            //Log.d(TAG, "onBeforeClusterItemRendered: item bitmap is null " + (hashMap.get(item)==null));
-            Picasso.with(getActivity())
-                    .load(item.getUrl())
-                    .into(itemView);
+            Log.d(TAG, "onBeforeClusterItemRendered: item bitmap is null " + (hashMap.get(item)==null));
+            if(hashMap.get(item) == null){
+                Picasso.with(getActivity())
+                        .load(item.getUrl())
+                        .into(itemView);
+            } else {
+                itemView.setImageBitmap(hashMap.get(item));
+            }
 
             Bitmap icon = itemIconGenerator.makeIcon();
             markerOptions
@@ -343,24 +333,14 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
         clusterManager.setRenderer(new GeoGalleryItemRenderer(getActivity()));
         mMap.setOnCameraIdleListener(clusterManager);
         mMap.setOnMarkerClickListener(clusterManager);
+        mMap.setOnMapClickListener(this);
         clusterManager.setOnClusterClickListener(this);
         clusterManager.setOnClusterItemClickListener(this);
     }
 
-    private void showPhoto(){
-        int margin = getResources().getDimensionPixelOffset(R.dimen.map_inset_margin);
-
-        //Устанавливаем границы, по которым изначально отобразится карта
-        LatLng myPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-        boundsBuild
-                .include(myPoint);
-
-        CameraUpdate update = CameraUpdateFactory.newLatLngBounds(boundsBuild.build(), margin);
+    @Override
+    public void showPhoto(CameraUpdate update, MarkerOptions myMarker){
         mMap.animateCamera(update);
-
-        Log.d(TAG, "updateUI: animateCameraCalled");
-        MarkerOptions myMarker = new MarkerOptions()
-                .position(myPoint);
         mMap.addMarker(myMarker);
     }
 
