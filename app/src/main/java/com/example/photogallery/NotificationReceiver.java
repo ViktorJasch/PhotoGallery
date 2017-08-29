@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
-import com.example.photogallery.mvp.photos.PollService;
+import com.example.photogallery.service.PollService;
 
 /**
  * Автономный приемник. Фильтром является ACTION_SHOW_NOTIFICATION. Если приложение запущенно, то

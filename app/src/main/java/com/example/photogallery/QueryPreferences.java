@@ -12,43 +12,49 @@ public class QueryPreferences {
     private static final String PREF_LAST_RESULT_ID = "lastResultId";
     private static final String PREF_IS_ALARM_ON = "isAlarmOn";
 
-    public static String getStoredQuery(Context context) {
+    private Context mContext;
+
+    public QueryPreferences(Context context){
+        mContext = context;
+    }
+
+    public String getStoredQuery() {
         return PreferenceManager
-                .getDefaultSharedPreferences(context)
+                .getDefaultSharedPreferences(mContext)
                 .getString(PREF_SEARCH_QUERY, null);
     }
 
-    public static void setStoredQuery(Context context, String query) {
+    public void setStoredQuery(String query) {
         PreferenceManager
-                .getDefaultSharedPreferences(context)
+                .getDefaultSharedPreferences(mContext)
                 .edit()
                 .putString(PREF_SEARCH_QUERY, query)
                 .apply();
     }
 
-    public static String getLastResultId(Context context){
+    public String getLastResultId(){
         return PreferenceManager
-                .getDefaultSharedPreferences(context)
+                .getDefaultSharedPreferences(mContext)
                 .getString(PREF_LAST_RESULT_ID, null);
     }
 
-    public static void setLastResultId(Context context, String lastId){
+    public void setLastResultId(String lastId){
         PreferenceManager
-                .getDefaultSharedPreferences(context)
+                .getDefaultSharedPreferences(mContext)
                 .edit()
                 .putString(PREF_LAST_RESULT_ID, lastId)
                 .apply();
     }
 
-    public static boolean isAlarmOn(Context context){
+    public boolean isAlarmOn(){
         return PreferenceManager
-                .getDefaultSharedPreferences(context)
+                .getDefaultSharedPreferences(mContext)
                 .getBoolean(PREF_IS_ALARM_ON, false);
     }
 
-    public static void setAlarmOn(Context context, Boolean isOn){
+    public void setAlarmOn(Boolean isOn){
         PreferenceManager
-                .getDefaultSharedPreferences(context)
+                .getDefaultSharedPreferences(mContext)
                 .edit()
                 .putBoolean(PREF_IS_ALARM_ON, isOn)
                 .apply();

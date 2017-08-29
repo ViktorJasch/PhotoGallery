@@ -1,6 +1,7 @@
 package com.example.photogallery.mvp.photos;
 
 import com.example.photogallery.mvp.model.GalleryItem;
+import com.example.photogallery.permissions.BasePermissionDefinition;
 import com.hannesdorfmann.mosby3.mvp.lce.MvpLceView;
 
 import java.util.List;
@@ -10,5 +11,5 @@ import java.util.List;
  */
 
 public interface PhotosView extends MvpLceView<List<GalleryItem>> {
-    void loadMoreData();
+    void requestAndExplainPermission(BasePermissionDefinition basePermissionDefinition);
 }

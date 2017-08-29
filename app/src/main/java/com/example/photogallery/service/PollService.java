@@ -1,4 +1,4 @@
-package com.example.photogallery.mvp.photos;
+package com.example.photogallery.service;
 
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -13,21 +13,17 @@ import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.example.photogallery.PhotoGalleryApp;
 import com.example.photogallery.QueryPreferences;
 import com.example.photogallery.R;
 import com.example.photogallery.mvp.model.GalleryItem;
-import com.example.photogallery.mvp.model.Photos;
-import com.example.photogallery.mvp.model.PhotosInfo;
-import com.example.photogallery.network.FlickrApi;
-import com.example.photogallery.network.Requests;
-import com.example.photogallery.network.RetrofitClient;
+import com.example.photogallery.mvp.model.network.RequestsManager;
+import com.example.photogallery.mvp.photos.PhotoGalleryActivity;
+import com.example.photogallery.mvp.photos.PhotosModule;
 
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import rx.Observer;
+import javax.inject.Inject;
 
 /**
  * Created by Виктор on 11.01.2017.
@@ -42,8 +38,17 @@ public class PollService extends IntentService {
     public static final String NOTIFICATION = "NOTIFICATION";
 
 
+    @Inject QueryPreferences queryPreferences;
+    @Inject RequestsManager requestsManager;
     public PollService() {
         super(TAG);
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        PhotoGalleryApp.get(this).getAppComponent()
+                .plus(new PollServiceModule());
     }
 
     @Override
@@ -51,17 +56,17 @@ public class PollService extends IntentService {
         if(!isNetworkAvailableAndConnected())
             return;
 
-        String query = QueryPreferences.getStoredQuery(this);
-        final String lastResultId = QueryPreferences.getLastResultId(this);
+        String query = queryPreferences.getStoredQuery();
+        final String lastResultId = queryPreferences.getLastResultId();
 
         if(query == null)
-            Requests.getRecentPhoto(1)
+            requestsManager.getRecentPhoto(1)
                     //map - получаем из PhotosInfo лист элементов GalleryItem
                     .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
                     .subscribe(photosInfoPhotos -> doOnResponse(photosInfoPhotos, lastResultId),
                     throwable -> throwable.printStackTrace());
         else
-            Requests.searchPhoto(query, 1)
+            requestsManager.searchPhoto(query, 1)
                     .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
                     .subscribe(photosInfoPhotos -> doOnResponse(photosInfoPhotos, lastResultId),
                     throwable -> throwable.printStackTrace());
@@ -92,7 +97,7 @@ public class PollService extends IntentService {
             showBackgroundNotification(0, notification);
         }
 
-        QueryPreferences.setLastResultId(getApplicationContext(), resultId);
+        queryPreferences.setLastResultId(resultId);
     }
 
     public static Intent newIntent(Context context){
@@ -111,7 +116,7 @@ public class PollService extends IntentService {
             am.cancel(pi);
             pi.cancel();
         }
-        QueryPreferences.setAlarmOn(context, isOn);
+        //queryPreferences.setAlarmOn(context, isOn);
     }
 
     public static boolean isServiceAlarmOn(Context context){

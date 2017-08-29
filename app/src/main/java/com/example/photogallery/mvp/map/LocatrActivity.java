@@ -12,7 +12,6 @@ import com.example.photogallery.SingleFragmentActivity;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
-//TODO добавить динамическое добавление разрешений
 public class LocatrActivity extends SingleFragmentActivity {
     private final String TAG_FRAGMENT_LOCATR = "locatrFragment";
     private static final int REQUEST_CODE = 0;

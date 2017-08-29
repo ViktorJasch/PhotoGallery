@@ -39,6 +39,7 @@ import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
+import com.hannesdorfmann.mosby3.mvp.MvpFragment;
 import com.sothree.slidinguppanel.ScrollableViewHelper;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import com.squareup.picasso.Picasso;
@@ -58,7 +59,7 @@ import butterknife.ButterKnife;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class LocatrFragment extends Fragment implements LocatrView, ClusterManager.OnClusterClickListener<GeoGalleryItem>,
+public class LocatrFragment extends MvpFragment<LocatrView, LocatrPresenter> implements LocatrView, ClusterManager.OnClusterClickListener<GeoGalleryItem>,
         ClusterManager.OnClusterItemClickListener<GeoGalleryItem>, LocatrActivity.OnBackPressedListener,
         GoogleMap.OnMapClickListener{
     @BindView(R.id.mapView)
@@ -70,7 +71,6 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
 
     private boolean slidingPanelIsHidden;
     private PhotoAdapter adapter;
-    private LocatrPresenter presenter;
     private GoogleApiClient mClient;
     private GoogleMap mMap;
     private ProgressDialog pd;
@@ -90,8 +90,7 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
         setHasOptionsMenu(true);
         Log.d(TAG, "onCreate: ");
         hashMap = new HashMap<>(128);
-        presenter = new LocatrPresenter(this);
-        googleApiClientInit();
+        presenter.onMapViewCreate(getActivity());
     }
 
     @Override
@@ -129,6 +128,11 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
     }
 
     @Override
+    public LocatrPresenter createPresenter() {
+        return new LocatrPresenter(this);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.action_locate:
@@ -156,6 +160,7 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
         Log.d(TAG, "onResume: mMapView = null: " + (mMapView == null));
         super.onResume();
         mMapView.onResume();
+        presenter.onMapViewResume();
     }
 
     @Override
@@ -342,24 +347,6 @@ public class LocatrFragment extends Fragment implements LocatrView, ClusterManag
     public void showPhoto(CameraUpdate update, MarkerOptions myMarker){
         mMap.animateCamera(update);
         mMap.addMarker(myMarker);
-    }
-
-    private void googleApiClientInit() {
-        mClient = new GoogleApiClient.Builder(getActivity())
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(@Nullable Bundle bundle) {
-                        Log.d(TAG, "onConnected: ");
-                        getActivity().invalidateOptionsMenu();
-                        loadData(false);
-                    }
-
-                    @Override
-                    public void onConnectionSuspended(int i) {
-                    }
-                })
-                .build();
     }
 
     @Subscribe

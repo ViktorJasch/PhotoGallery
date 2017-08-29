@@ -11,5 +11,7 @@
     <string name="search_near">Find an image near you</string>
     <string name="fine_location_explanation">
         Для продолжения необходимо предоставить
-        приложению данные о важем местонахождении</string>
+        приложению данные о важем местонахождении.
+        Это позволит находить фотографии рядома с вами.</string>
+
 </resources>

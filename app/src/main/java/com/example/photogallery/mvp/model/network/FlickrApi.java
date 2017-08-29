@@ -1,11 +1,9 @@
-package com.example.photogallery.network;
+package com.example.photogallery.mvp.model.network;
 
-import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.model.GeoPhotosInfo;
 import com.example.photogallery.mvp.model.Photos;
 import com.example.photogallery.mvp.model.PhotosInfo;
 
-import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 import rx.Observable;

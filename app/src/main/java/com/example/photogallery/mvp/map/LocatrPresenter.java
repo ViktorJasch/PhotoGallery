@@ -1,17 +1,15 @@
 package com.example.photogallery.mvp.map;
 
+import android.content.Context;
 import android.location.Location;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.example.photogallery.Constants;
-import com.example.photogallery.R;
-import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.model.GeoGalleryItem;
 import com.example.photogallery.mvp.model.GeoPhotosInfo;
 import com.example.photogallery.mvp.model.Photos;
-import com.example.photogallery.network.FlickrApi;
-import com.example.photogallery.network.Requests;
-import com.example.photogallery.network.RetrofitClient;
+import com.example.photogallery.mvp.model.network.RequestsManager;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
@@ -19,18 +17,12 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.maps.android.geometry.Point;
 import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
 
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import rx.Observer;
-import rx.Scheduler;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -40,7 +32,10 @@ import rx.schedulers.Schedulers;
 
 public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
     private static final String TAG = "LocatrPresenter";
-    private Location currentLocation;
+    private GoogleApiClient mClient;
+    private Location mCurrentLocation;
+    private RequestsManager mRequestsManager;
+
 
     protected LocatrPresenter(LocatrView view){
         attachView(view);
@@ -61,7 +56,7 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
                         @Override
                         public void onLocationChanged(Location location) {
                             Log.i(TAG, "Got a fix: " + location);
-                            currentLocation = location;
+                            mCurrentLocation = location;
                             searchGeoPhoto("" + location.getLatitude(),"" + location.getLongitude());
                         }
                     });
@@ -71,15 +66,44 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
     }
 
     protected void updateLocation(int margin){
-        LatLng myPoint = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+        LatLng myPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
         CameraUpdate update = CameraUpdateFactory.newLatLngZoom(myPoint, 10.0f);
         MarkerOptions myMarker = new MarkerOptions()
                 .position(myPoint);
         getView().showPhoto(update, myMarker);
     }
 
+    protected void onMapViewResume(){
+        mClient.connect();
+    }
+
+    protected void onMapViewStop(){
+        mClient.disconnect();
+    }
+
+    protected void onMapViewCreate(Context context){
+        googleApiClientInit(context);
+    }
+
+    private void googleApiClientInit(Context context) {
+        mClient = new GoogleApiClient.Builder(context)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(@Nullable Bundle bundle) {
+                        Log.d(TAG, "onConnected: ");
+                        findImage(mClient);
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                    }
+                })
+                .build();
+    }
+
     private void searchGeoPhoto(String lat, String lon){
-        Requests.searchGeoPhoto(lat, lon).subscribeOn(Schedulers.io())
+        mRequestsManager.searchGeoPhoto(lat, lon).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<Photos<GeoPhotosInfo>>() {
                     @Override

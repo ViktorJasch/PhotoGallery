@@ -1,20 +1,16 @@
 package com.example.photogallery.mvp.photos;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.GridLayoutManager;
@@ -28,19 +24,22 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.photogallery.mvp.map.LocatrActivity;
+import com.example.photogallery.PhotoGalleryApp;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.page.*;
 import com.example.photogallery.PhotoAdapter;
-import com.example.photogallery.QueryPreferences;
 import com.example.photogallery.R;
 import com.example.photogallery.bus.PhotoHolderClickedEvent;
+import com.example.photogallery.permissions.BasePermissionDefinition;
+import com.example.photogallery.service.PollService;
 import com.hannesdorfmann.mosby3.mvp.lce.MvpLceFragment;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
 import java.util.List;
+
+import javax.inject.Inject;
 
 import butterknife.BindDrawable;
 import butterknife.BindView;
@@ -55,28 +54,31 @@ public class PhotoGalleryFragment extends
         PhotosView, PhotosPresenter> implements PhotosView,
         SwipeRefreshLayout.OnRefreshListener, CustomScrollListener.LoadingListener{
     private static final String TAG = "PhotoGalleryFragment";
-    private static final int PERMISSION_ACCESS_FINE_LOCATION = 1;
 
     @BindView(R.id.fragment_photoGallery_recycleView)
     RecyclerView mRecyclerView;
     @BindDrawable(R.drawable.bill_up_close)
     Drawable defaultDrawable;
 
-    private PhotoAdapter adapter;
-    private GridLayoutManager manager;
-    private CustomScrollListener scrollListener;
-    private ProgressDialog pd;
-    //для бесконечной прокрутки
-    boolean loadingMoreElements = false;
+
+    @Inject PhotoAdapter adapter;
+    @Inject GridLayoutManager manager;
+    @Inject CustomScrollListener scrollListener;
+    private ProgressDialog mProgressDialog;
+    //для пагинации списка
+    private boolean mLoadingMoreElements = false;
     //Данный приемник срабатывает только когда приложение запущенно (так как он динамический).
     //Фильтром является ACTION_SHOW_NOTIFICATION. Сообщения с таким тегом вызываются при появлении новых фото
     //в классе PollService методом showBackgroundNotification.
     //Если этот применик существует (т.е. приложение запущенно), уведомление отменяется (что б не бесило),
     private BroadcastReceiver mOnShowNotification;
+    private PhotosComponent mPhotosComponent;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initPhotosComponent();
+        mPhotosComponent.inject(this);
         Log.d(TAG, "onCreate: ");
         setHasOptionsMenu(true);
         setRetainInstance(true);
@@ -133,8 +135,7 @@ public class PhotoGalleryFragment extends
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                QueryPreferences.setStoredQuery(getActivity(), query);
-                loadData(false);
+                presenter.onQuerySet(query);
                 return true;
             }
 
@@ -147,8 +148,7 @@ public class PhotoGalleryFragment extends
         searchView.setOnSearchClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String query = QueryPreferences.getStoredQuery(getActivity());
-                searchView.setQuery(query, false);
+                searchView.setQuery(presenter.getQueryString(), false);
             }
         });
 
@@ -163,24 +163,14 @@ public class PhotoGalleryFragment extends
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.menu_item_clear:
-                QueryPreferences.setStoredQuery(getActivity(), null);
-                loadData(false);
+                presenter.onClearItemClick();
                 return true;
             case R.id.menu_item_toggle_polling:
-                boolean ShouldStartAlarm = PollService.isServiceAlarmOn(getActivity());
-                PollService.setServiceAlarm(getActivity(), !ShouldStartAlarm);
+                presenter.onTogglePollingItemClick(getActivity());
                 getActivity().invalidateOptionsMenu();
                 return true;
             case R.id.action_locate:
-                if (ContextCompat.checkSelfPermission(getActivity(),
-                        Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED){
-                    Log.d(TAG, "loadData: if permissions need");
-                    locationPermissionRequestAndExplain();
-                } else{
-                    Intent intent = LocatrActivity.newIntent(getActivity());
-                    startActivity(intent);
-                }
+                presenter.onActionLocateItemClick(getActivity());
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -204,9 +194,6 @@ public class PhotoGalleryFragment extends
     }
 
     private void recycleViewPrepare(){
-        adapter = new PhotoAdapter(getActivity());
-        manager = new GridLayoutManager(getActivity(), 3);
-        scrollListener = new CustomScrollListener(manager, this);
         mRecyclerView.setLayoutManager(manager);
         mRecyclerView.addOnScrollListener(scrollListener);
         setupAdapter();
@@ -220,8 +207,7 @@ public class PhotoGalleryFragment extends
     @Nullable
     @Override
     public PhotosPresenter createPresenter() {
-        Log.d(TAG, "createPresenter: called");
-        return new PhotosPresenter();
+        return mPhotosComponent.presenter();
     }
 
     @Override
@@ -233,34 +219,26 @@ public class PhotoGalleryFragment extends
 
     @Override
     public void loadData(boolean pullToRefresh) {
-        String query = QueryPreferences.getStoredQuery(getActivity());
-        Log.d(TAG, "loadData: presenter == null: " + (presenter == null));
-        presenter.loadItems(query, pullToRefresh);
+        presenter.loadItems(pullToRefresh);
     }
 
     @Override
     public void showLoading(boolean pullToRefresh) {
-        if(loadingMoreElements){
-            pd = new ProgressDialog(getActivity());
-            pd.show();
+        if(mLoadingMoreElements){
+            mProgressDialog = new ProgressDialog(getActivity());
+            mProgressDialog.show();
         } else
             super.showLoading(pullToRefresh);
     }
 
     @Override
     public void showContent() {
-        if(pd != null){
-            pd.cancel();
-            pd = null;
+        if(mProgressDialog != null){
+            mProgressDialog.cancel();
+            mProgressDialog = null;
         }
         contentView.setRefreshing(false);
         super.showContent();
-    }
-
-    @Override
-    public void loadMoreData() {
-        String query = QueryPreferences.getStoredQuery(getActivity());
-        presenter.loadMore(query);
     }
 
     @Override
@@ -274,54 +252,48 @@ public class PhotoGalleryFragment extends
     public void needMoreElements() {
         Log.d(TAG, "needMoreElements: called");
         setLoadingMoreElements(true);
-        loadMoreData();
+        presenter.loadMore();
     }
 
-    private void setLoadingMoreElements(boolean isLoading){
-        loadingMoreElements = isLoading;
-        scrollListener.setLoading(isLoading);
-    }
-
-    //Методы для запроса разрешение на получение геопозиционных данных
-    private void locationPermissionRequestAndExplain() {
-
+    @Override
+    public void requestAndExplainPermission(BasePermissionDefinition permissionDefinition) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                Manifest.permission.ACCESS_FINE_LOCATION)) {
+                permissionDefinition.getPermission())) {
             Log.d(TAG, "locationPermissionRequestAndExplain: need explain");
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setMessage(R.string.fine_location_explanation);
-            builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    requestFineLocationPermission();
-                }
-            });
-            builder.create().show();
-
+            createPermissionAlertDialog(permissionDefinition).show();
         } else {
             Log.d(TAG, "locationPermissionRequestAndExplain: request");
-            requestFineLocationPermission();
+            requestPermission(permissionDefinition);
         }
-    }
-
-    private void requestFineLocationPermission() {
-        requestPermissions(
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                PERMISSION_ACCESS_FINE_LOCATION);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult: start, request code = " + requestCode);
-        switch (requestCode){
-            case PERMISSION_ACCESS_FINE_LOCATION:
-                Log.d(TAG, "onRequestPermissionsResult: switch");
-                if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                    Intent intent = LocatrActivity.newIntent(getActivity());
-                    startActivity(intent);
-                }
-                return;
-        }
+        presenter.onRequestPermissionResult(requestCode, grantResults, getActivity());
+    }
+
+    private void setLoadingMoreElements(boolean isLoading){
+        mLoadingMoreElements = isLoading;
+        scrollListener.setLoading(isLoading);
+    }
+
+    private AlertDialog createPermissionAlertDialog(BasePermissionDefinition permissionDefinition){
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setMessage(permissionDefinition.getDescription());
+        builder.setPositiveButton(android.R.string.ok, ((dialog, which) -> requestPermission(permissionDefinition)));
+        return builder.create();
+    }
+
+    private void requestPermission(BasePermissionDefinition permissionDefinition) {
+        requestPermissions(
+                new String[]{permissionDefinition.getPermission()},
+                permissionDefinition.getRequestCode());
+    }
+
+    private void initPhotosComponent(){
+        mPhotosComponent = PhotoGalleryApp.get(getActivity()).getAppComponent()
+                .plus(new PhotosModule(this));
     }
 
     @Subscribe
