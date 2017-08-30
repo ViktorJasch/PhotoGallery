@@ -29,6 +29,7 @@ import butterknife.ButterKnife;
 /**
  * A placeholder fragment containing a simple view.
  */
+//TODO уйти от webView
 public class PhotoPageFragment extends Fragment implements onBackPressedListener {
     private static final String ARG_URI = "photo_page_url";
     private static final String TAG = "PhotoPageFragment";

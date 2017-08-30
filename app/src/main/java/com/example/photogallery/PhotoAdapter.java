@@ -25,17 +25,12 @@ import java.util.List;
 
 public class PhotoAdapter<T extends GalleryItem> extends RecyclerView.Adapter<PhotoAdapter<T>.PhotoHolder>{
     List<T> galleryItems = new ArrayList<>();
-    Context context;
-    //ThumbnailDownload<PhotoHolder> thumbnailDownload;
-    //Drawable defaultDrawable;
+    private PicassoHelper mPicassoHelper;
 
-//    public PhotoAdapter(ThumbnailDownload thumbnailDownload, Drawable defaultDrawable){
-//        this.thumbnailDownload = thumbnailDownload;
-//        this.defaultDrawable = defaultDrawable;
-//    }
 
-    public PhotoAdapter(Context context){
-        this.context = context;
+    public PhotoAdapter(PicassoHelper picassoHelper, Context context){
+        mPicassoHelper = picassoHelper;
+        mPicassoHelper.setPlaceholder(context.getResources().getDrawable(R.drawable.bill_up_close));
     }
 
     @Override
@@ -82,12 +77,10 @@ public class PhotoAdapter<T extends GalleryItem> extends RecyclerView.Adapter<Ph
 
         public void bindGalleryItem(T item){
             galleryItem = item;
-            Picasso.with(context)
-                    .load(item.getUrl())
-                    .placeholder(R.drawable.bill_up_close)
-                    .into(mPhoto);
+            mPicassoHelper.putPhotoIntoView(mPhoto, item);
         }
 
+        //TODO увеличивать по клику изображение (с анимацией)
         @Override
         public void onClick(View v) {
             EventBus.getDefault().post(new PhotoHolderClickedEvent(galleryItem.getPhotoUri()));

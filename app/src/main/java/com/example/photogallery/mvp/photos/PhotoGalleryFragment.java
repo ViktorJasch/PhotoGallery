@@ -24,12 +24,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.photogallery.PhotoGalleryApp;
+import com.example.photogallery.app.PhotoGalleryApp;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.page.*;
 import com.example.photogallery.PhotoAdapter;
 import com.example.photogallery.R;
 import com.example.photogallery.bus.PhotoHolderClickedEvent;
+import com.example.photogallery.mvp.photos.di.PhotosComponent;
+import com.example.photogallery.mvp.photos.di.PhotosModule;
 import com.example.photogallery.permissions.BasePermissionDefinition;
 import com.example.photogallery.service.PollService;
 import com.hannesdorfmann.mosby3.mvp.lce.MvpLceFragment;
@@ -62,8 +64,8 @@ public class PhotoGalleryFragment extends
 
 
     @Inject PhotoAdapter adapter;
-    @Inject GridLayoutManager manager;
-    @Inject CustomScrollListener scrollListener;
+    private GridLayoutManager manager;
+    private CustomScrollListener scrollListener;
     private ProgressDialog mProgressDialog;
     //для пагинации списка
     private boolean mLoadingMoreElements = false;
@@ -179,8 +181,8 @@ public class PhotoGalleryFragment extends
 
     /**
      * Метод инициализирует при необходимости адаптер если выполняется условие. Условием является
-     * привязанность фрагмента к активности. В данном приложении используется удержание фрагмента,
-     * а так же фоновый поток, реализованный с помощью AsyncTask. Метод вызывается в onPostExecute.
+     * привязанность фрагмента к активности. В данном приложении используется удержание фрагмента.
+     * Метод вызывается в onPostExecute.
      * Это означает, что возможен такой вариант, что при смене конфигурации активность уничтожится,
      * а в теле фрагмента закончит выполняться фоновый поток и вызовется метод onPostExecute.
      * По идее, должен обновиться mRecycleView, но этот элемент не будет привязан к активности (она ведь уничтожена),
@@ -194,6 +196,8 @@ public class PhotoGalleryFragment extends
     }
 
     private void recycleViewPrepare(){
+        manager = new GridLayoutManager(getActivity(), 3);
+        scrollListener = new CustomScrollListener(manager, this);
         mRecyclerView.setLayoutManager(manager);
         mRecyclerView.addOnScrollListener(scrollListener);
         setupAdapter();
@@ -293,7 +297,7 @@ public class PhotoGalleryFragment extends
 
     private void initPhotosComponent(){
         mPhotosComponent = PhotoGalleryApp.get(getActivity()).getAppComponent()
-                .plus(new PhotosModule(this));
+                .plus(new PhotosModule());
     }
 
     @Subscribe

@@ -12,4 +12,6 @@ public class Constants {
     public static final int READ_TIMEOUT_SEC = 30;
 
     public static final int PERMISSION_ACCESS_FINE_LOCATION = 1;
+
+    public static final int COUNT_LOCATR_PHOTO_LOADING = 50;
 }

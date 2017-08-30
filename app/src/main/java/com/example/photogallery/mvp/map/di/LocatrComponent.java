@@ -1,4 +1,7 @@
-package com.example.photogallery.mvp.map;
+package com.example.photogallery.mvp.map.di;
+
+import com.example.photogallery.mvp.map.LocatrFragment;
+import com.example.photogallery.mvp.map.LocatrPresenter;
 
 import dagger.Subcomponent;
 
@@ -10,4 +13,5 @@ import dagger.Subcomponent;
 @Subcomponent(modules = LocatrModule.class)
 public interface LocatrComponent {
     void inject(LocatrFragment locatrFragment);
+    LocatrPresenter presenter();
 }

@@ -31,21 +31,19 @@ import rx.schedulers.Schedulers;
 public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
     private static final String TAG = "PhotosPresenter";
     private ArrayList<GalleryItem> mItems = new ArrayList<>(128);
-    private QueryPreferences mQueryPreferences;
-    private RequestsManager mRequestsManager;
-    private IntentStarter mIntentStarter;
+    @Inject QueryPreferences mQueryPreferences;
+    @Inject RequestsManager mRequestsManager;
+    @Inject IntentStarter mIntentStarter;
     //Возможно два вида загрузки фото: загрузка по тематике пользователя (если он что то ввел с троку search)
     // и загрузка последних фотографий.
     //В связи с тем, что реализованна пагинация (показать еще), а flickr выдает фото постранично,
-    //нужно отслеживать эти страницы. При переключении между
+    //нужно отслеживать эти страницы. При переключении между различными видами загрузки,
+    //необходимо устанавливать текущую страницу в 1;
     private int searchPage = 1;
     private int recentPage = 1;
 
     @Inject
-    PhotosPresenter(QueryPreferences queryPreferences, RequestsManager requestsManager, IntentStarter intentStarter){
-        mQueryPreferences = queryPreferences;
-        mRequestsManager = requestsManager;
-        mIntentStarter = intentStarter;
+    PhotosPresenter(){
     }
 
     public void onQuerySet(String query){
@@ -133,7 +131,7 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
                         () -> doComplited());
     }
 
-    private void doOnResponce(List<GalleryItem> freshItems, int page, boolean pullToRefresh) {
+    private void doResponce(List<GalleryItem> freshItems, int page, boolean pullToRefresh) {
         if(pullToRefresh){
             mItems.addAll(0, freshItems);
         }
@@ -157,6 +155,6 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
 
     private void doNext(List<GalleryItem> photos, int page, boolean pullToRefresh){
         Collections.reverse(photos);
-        doOnResponce(photos, page, pullToRefresh);
+        doResponce(photos, page, pullToRefresh);
     }
 }

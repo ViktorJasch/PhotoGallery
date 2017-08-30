@@ -1,7 +1,8 @@
-package com.example.photogallery;
+package com.example.photogallery.app;
 
 import android.app.Application;
 import android.content.Context;
+
 
 /**
  * Created by viktor on 29.08.17.
@@ -30,4 +31,5 @@ public class PhotoGalleryApp extends Application{
     public AppComponent getAppComponent(){
         return mAppComponent;
     }
+
 }

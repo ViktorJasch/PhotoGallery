@@ -15,4 +15,5 @@ public interface LocatrView extends MvpView {
     void showError(Throwable e, boolean pullToRefresh);
     void showContent();
     void showLoading(boolean pullToRefresh);
+    void invalidateMenu();
 }

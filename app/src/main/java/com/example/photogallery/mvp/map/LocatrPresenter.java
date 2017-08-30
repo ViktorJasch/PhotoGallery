@@ -6,12 +6,13 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.example.photogallery.Constants;
+import com.example.photogallery.PicassoHelper;
 import com.example.photogallery.mvp.model.GeoGalleryItem;
 import com.example.photogallery.mvp.model.GeoPhotosInfo;
 import com.example.photogallery.mvp.model.Photos;
 import com.example.photogallery.mvp.model.network.RequestsManager;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
@@ -22,7 +23,8 @@ import com.hannesdorfmann.mosby3.mvp.MvpBasePresenter;
 
 import java.util.List;
 
-import rx.Observer;
+import javax.inject.Inject;
+
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -34,14 +36,15 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
     private static final String TAG = "LocatrPresenter";
     private GoogleApiClient mClient;
     private Location mCurrentLocation;
-    private RequestsManager mRequestsManager;
+    @Inject RequestsManager mRequestsManager;
+    @Inject PicassoHelper mPicassoHelper;
 
+    @Inject
+    protected LocatrPresenter(){
 
-    protected LocatrPresenter(LocatrView view){
-        attachView(view);
     }
 
-    protected void findImage(GoogleApiClient gac){
+    protected void findImage(){
 
         Log.d(TAG, "findImage: view is " + isViewAttached());
         final LocationRequest locReq = LocationRequest.create();
@@ -52,14 +55,8 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
 
         try{
             LocationServices.FusedLocationApi
-                    .requestLocationUpdates(gac, locReq, new LocationListener() {
-                        @Override
-                        public void onLocationChanged(Location location) {
-                            Log.i(TAG, "Got a fix: " + location);
-                            mCurrentLocation = location;
-                            searchGeoPhoto("" + location.getLatitude(),"" + location.getLongitude());
-                        }
-                    });
+                    .requestLocationUpdates(mClient, locReq,
+                            (location -> doLocationChanged(location)));
         } catch (SecurityException exc){
             Log.i(TAG, "findImage: SecurityException is caught: " + exc);
         }
@@ -73,16 +70,20 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
         getView().showPhoto(update, myMarker);
     }
 
-    protected void onMapViewResume(){
+    protected void onMapViewCreate(Context context){
+        googleApiClientInit(context);
+    }
+
+    protected void onStart(){
         mClient.connect();
     }
 
-    protected void onMapViewStop(){
+    protected void onStop(){
         mClient.disconnect();
     }
 
-    protected void onMapViewCreate(Context context){
-        googleApiClientInit(context);
+    protected boolean isGoogleApiClientConnected(){
+        return mClient.isConnected();
     }
 
     private void googleApiClientInit(Context context) {
@@ -92,7 +93,8 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
                     @Override
                     public void onConnected(@Nullable Bundle bundle) {
                         Log.d(TAG, "onConnected: ");
-                        findImage(mClient);
+                        getView().invalidateMenu();
+                        findImage();
                     }
 
                     @Override
@@ -105,23 +107,31 @@ public class LocatrPresenter extends MvpBasePresenter<LocatrView> {
     private void searchGeoPhoto(String lat, String lon){
         mRequestsManager.searchGeoPhoto(lat, lon).subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Photos<GeoPhotosInfo>>() {
-                    @Override
-                    public void onCompleted() {
-                        getView().showContent();
-                    }
+                .subscribe(geoPhotosInfoPhotos -> doNext(geoPhotosInfoPhotos),
+                        throwable -> doError(throwable),
+                        () -> doCompleted());
+    }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        getView().showError(e, false);
-                    }
+    private void doNext(Photos<GeoPhotosInfo> geoPhotosInfoPhotos){
+        GeoPhotosInfo gpi = geoPhotosInfoPhotos.getInfo();
+        //ограничение загружаемых фото
+        List<GeoGalleryItem> list = gpi.getPhoto().subList(0, Constants.COUNT_LOCATR_PHOTO_LOADING);
+        mPicassoHelper.cechingPhotos(list);
+        getView().setData(list);
 
-                    @Override
-                    public void onNext(Photos<GeoPhotosInfo> geoPhotosInfoPhotos) {
-                        GeoPhotosInfo gpi = geoPhotosInfoPhotos.getInfo();
-                        List<GeoGalleryItem> list = gpi.getPhoto();
-                        getView().setData(list.subList(0, 50));
-                    }
-                });
+    }
+
+    private void doError(Throwable e){
+        getView().showError(e, false);
+    }
+
+    private void doCompleted(){
+        getView().showContent();
+    }
+
+    private void doLocationChanged(Location location){
+        Log.i(TAG, "Got a fix: " + location);
+        mCurrentLocation = location;
+        searchGeoPhoto("" + location.getLatitude(),"" + location.getLongitude());
     }
 }

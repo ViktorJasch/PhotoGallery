@@ -1,6 +1,8 @@
-package com.example.photogallery.mvp.photos;
+package com.example.photogallery.mvp.photos.di;
 
-import dagger.Component;
+import com.example.photogallery.mvp.photos.PhotoGalleryFragment;
+import com.example.photogallery.mvp.photos.PhotosPresenter;
+
 import dagger.Subcomponent;
 
 /**

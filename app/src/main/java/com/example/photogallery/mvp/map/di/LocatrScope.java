@@ -1,4 +1,4 @@
-package com.example.photogallery.mvp.map;
+package com.example.photogallery.mvp.map.di;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

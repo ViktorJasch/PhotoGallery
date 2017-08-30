@@ -13,13 +13,12 @@ import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.example.photogallery.PhotoGalleryApp;
+import com.example.photogallery.app.PhotoGalleryApp;
 import com.example.photogallery.QueryPreferences;
 import com.example.photogallery.R;
 import com.example.photogallery.mvp.model.GalleryItem;
 import com.example.photogallery.mvp.model.network.RequestsManager;
 import com.example.photogallery.mvp.photos.PhotoGalleryActivity;
-import com.example.photogallery.mvp.photos.PhotosModule;
 
 import java.util.List;
 

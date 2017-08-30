@@ -1,13 +1,10 @@
-package com.example.photogallery;
+package com.example.photogallery.app;
 
-import com.example.photogallery.mvp.map.LocatrActivity;
-import com.example.photogallery.mvp.map.LocatrComponent;
-import com.example.photogallery.mvp.map.LocatrModule;
-import com.example.photogallery.mvp.model.network.FlickrApi;
+import com.example.photogallery.mvp.map.di.LocatrComponent;
+import com.example.photogallery.mvp.map.di.LocatrModule;
 import com.example.photogallery.mvp.model.network.FlickrApiModule;
-import com.example.photogallery.mvp.photos.PhotoGalleryActivity;
-import com.example.photogallery.mvp.photos.PhotosComponent;
-import com.example.photogallery.mvp.photos.PhotosModule;
+import com.example.photogallery.mvp.photos.di.PhotosComponent;
+import com.example.photogallery.mvp.photos.di.PhotosModule;
 import com.example.photogallery.service.PollServiceComponent;
 import com.example.photogallery.service.PollServiceModule;
 
