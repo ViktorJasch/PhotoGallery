@@ -26,7 +26,9 @@ public class CustomScrollListener extends RecyclerView.OnScrollListener {
         int totalItemCount = layoutManager.getItemCount();//сколько всего элементов
         int firstVisibleItems = layoutManager.findFirstVisibleItemPosition();//какая позиция первого элемента
 
-        if (!isLoading) {//проверяем, грузим мы что-то или нет, эта переменная должна быть вне класса  OnScrollListener
+        //проверяем, грузим мы что-то или нет, эта переменная должна устанавливаться
+        //вне класса  OnScrollListener
+        if (!isLoading) {
             if ( (visibleItemCount+firstVisibleItems) >= totalItemCount) {
                 Log.d(TAG, "onScrolled: totalItems = " + totalItemCount + "\n" +
                         "visibleItemCount+firstVisibleItems = " + (visibleItemCount+firstVisibleItems));

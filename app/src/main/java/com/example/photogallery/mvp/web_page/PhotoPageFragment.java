@@ -1,4 +1,4 @@
-package com.example.photogallery.mvp.page;
+package com.example.photogallery.mvp.web_page;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;

@@ -25,7 +25,7 @@ import com.example.photogallery.bus.PhotoHolderClickedEvent;
 import com.example.photogallery.mvp.map.di.LocatrComponent;
 import com.example.photogallery.mvp.map.di.LocatrModule;
 import com.example.photogallery.mvp.model.GeoGalleryItem;
-import com.example.photogallery.mvp.page.PhotoPageActivity;
+import com.example.photogallery.mvp.web_page.PhotoPageActivity;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;

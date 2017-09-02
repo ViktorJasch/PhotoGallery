@@ -114,18 +114,20 @@ public class PhotosPresenter extends MvpBasePresenter<PhotosView> {
 
     private void getRecentPhoto(final int page, final boolean pullToRefresh){
         Log.d(TAG, "getRecentPhoto: called, page = " + page);
-        mRequestsManager.getRecentPhoto(page).subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+        mRequestsManager.getRecentPhoto(page)
+                .subscribeOn(Schedulers.io())
                 .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(photos -> doNext(photos, page, pullToRefresh),
                         throwable -> doError(throwable),
                         () -> doComplited());
     }
 
     private void searchPhoto(String query, final int page, final boolean pullToRefresh){
-        mRequestsManager.searchPhoto(query, page).subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+        mRequestsManager.searchPhoto(query, page)
+                .subscribeOn(Schedulers.io())
                 .map(photosInfoPhotos -> photosInfoPhotos.getInfo().getPhoto())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(photos -> doNext(photos, page, pullToRefresh),
                         throwable -> doError(throwable),
                         () -> doComplited());

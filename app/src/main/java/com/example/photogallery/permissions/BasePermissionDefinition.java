@@ -15,11 +15,11 @@ import com.example.photogallery.R;
  * При большом количестве разрешений, код в активити (фрагменте) меняться не будет
  */
 
-public abstract class BasePermissionDefinition {
+public interface BasePermissionDefinition {
     //Получить само разрешение. Например Manifest.permission.ACCESS_FINE_LOCATION
-    public abstract String getPermission();
+    public String getPermission();
     //Получить описание разрешения. Помещается в AlertDialog для объяснения, зачем оно нужно
-    public abstract String getDescription();
+    public String getDescription();
     //Получить requestCode
-    public abstract int getRequestCode();
+    public int getRequestCode();
 }

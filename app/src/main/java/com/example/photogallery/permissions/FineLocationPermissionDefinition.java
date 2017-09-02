@@ -11,7 +11,7 @@ import com.example.photogallery.R;
  * Created by viktor on 29.08.17.
  */
 
-public class FineLocationPermissionDefinition extends BasePermissionDefinition {
+public class FineLocationPermissionDefinition implements BasePermissionDefinition {
     @Override
     public String getPermission() {
         return Manifest.permission.ACCESS_FINE_LOCATION;

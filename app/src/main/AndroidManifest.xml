@@ -38,13 +38,13 @@
 
         <service android:name=".service.PollService"/>
 
-        <receiver android:name=".StartupReceiver">
+        <receiver android:name=".broadcast.StartupReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".NotificationReceiver"
+            android:name=".broadcast.NotificationReceiver"
             android:exported="false">
             <intent-filter android:priority="-999">
                 <action android:name="com.example.photogallery.SHOW_NOTIFICATION"/>
@@ -52,7 +52,7 @@
         </receiver>
 
         <activity
-            android:name=".mvp.page.PhotoPageActivity"
+            android:name=".mvp.web_page.PhotoPageActivity"
             android:configChanges="keyboardHidden|screenSize|orientation">
         </activity>
 

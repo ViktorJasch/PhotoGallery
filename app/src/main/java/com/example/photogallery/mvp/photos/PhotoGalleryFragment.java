@@ -26,7 +26,7 @@ import android.view.ViewGroup;
 
 import com.example.photogallery.app.PhotoGalleryApp;
 import com.example.photogallery.mvp.model.GalleryItem;
-import com.example.photogallery.mvp.page.*;
+import com.example.photogallery.mvp.web_page.*;
 import com.example.photogallery.PhotoAdapter;
 import com.example.photogallery.R;
 import com.example.photogallery.bus.PhotoHolderClickedEvent;

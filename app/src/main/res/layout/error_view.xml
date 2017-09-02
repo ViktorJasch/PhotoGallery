@@ -5,15 +5,14 @@
 
   <TextView
       android:id="@+id/errorView"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:padding="16dp"
+      android:drawableTop="@drawable/ic_cloud_off"
       android:layout_gravity="center"
-      android:drawableTop="@drawable/ic_error_black_24dp"
-      android:drawablePadding="16dp"
       android:textSize="20sp"
-      android:textColor="#656565"
-      android:text="An error has occurred! click here to retry"
+      android:textColor="#000000"
+      android:text="@string/error_text"
       android:gravity="center"
       />
 </merge>
